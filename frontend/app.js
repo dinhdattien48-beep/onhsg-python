@@ -695,13 +695,31 @@ function renderDebugStep() {
     }
     
     // Update stdout
-    document.getElementById('debugger-stdout').textContent = step.stdout || '(Trống)';
+    document.getElementById('debugger-stdout').textContent = step.stdout || '';
+    
+    // Update explanation
+    document.getElementById('debugger-explanation').textContent = step.explanation || 'Đang thực thi dòng này...';
     
     // Update controls
     document.getElementById('debugger-status').textContent = `Bước ${currentDebugStep + 1} / ${debugSteps.length} (Dòng ${step.line})`;
     document.getElementById('debugger-prev').disabled = currentDebugStep === 0;
     document.getElementById('debugger-next').disabled = currentDebugStep === debugSteps.length - 1;
 }
+
+// Support hotkeys for debugger
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('debugger-modal').style.display === 'flex') {
+        if (e.key === 'F6' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            document.getElementById('debugger-next').click();
+        } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            document.getElementById('debugger-prev').click();
+        } else if (e.key === 'Escape') {
+            document.getElementById('close-debugger').click();
+        }
+    }
+});
 
 // ============================================================================
 // RENDER TEST RESULTS

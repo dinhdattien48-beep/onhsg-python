@@ -2,7 +2,44 @@ import sys
 import io
 import traceback
 import copy
+import ast
 from typing import List, Dict, Any
+
+def explain_code_heuristic(code: str) -> dict:
+    """Sử dụng AST để giải thích code Python bằng tiếng Việt một cách siêu nhanh."""
+    explanations = {}
+    try:
+        tree = ast.parse(code)
+        for node in ast.walk(tree):
+            if hasattr(node, 'lineno'):
+                line = node.lineno
+                if isinstance(node, ast.Assign):
+                    targets = [t.id for t in node.targets if isinstance(t, ast.Name)]
+                    if targets:
+                        explanations[line] = f'Gán giá trị tính toán được cho biến: {", ".join(targets)}'
+                elif isinstance(node, ast.AugAssign):
+                    if isinstance(node.target, ast.Name):
+                        explanations[line] = f'Cập nhật lại giá trị cho biến: {node.target.id}'
+                elif isinstance(node, ast.For):
+                    if isinstance(node.target, ast.Name):
+                        explanations[line] = f'Vòng lặp For: mỗi bước sẽ gán giá trị mới cho biến {node.target.id}'
+                    else:
+                        explanations[line] = 'Vòng lặp For'
+                elif isinstance(node, ast.If):
+                    explanations[line] = 'Kiểm tra điều kiện (Nếu đúng thì chạy đoạn code bên trong)'
+                elif isinstance(node, ast.While):
+                    explanations[line] = 'Vòng lặp While: Tiếp tục lặp chừng nào điều kiện này còn đúng'
+                elif isinstance(node, ast.FunctionDef):
+                    explanations[line] = f'Định nghĩa hàm mới có tên là: {node.name}'
+                elif isinstance(node, ast.Return):
+                    explanations[line] = 'Kết thúc hàm và trả về kết quả'
+                elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+                    if isinstance(node.value.func, ast.Name) and node.value.func.id == 'print':
+                        explanations[line] = 'In kết quả ra màn hình'
+    except Exception:
+        pass
+    return explanations
+
 
 def run_debug_trace(code: str, input_data: str, max_steps: int = 2000) -> dict:
     """
@@ -22,6 +59,7 @@ def run_debug_trace(code: str, input_data: str, max_steps: int = 2000) -> dict:
     
     step_count = 0
     error_msg = None
+    explanations = explain_code_heuristic(code)
     
     def trace_lines(frame, event, arg):
         nonlocal step_count, error_msg
@@ -49,7 +87,8 @@ def run_debug_trace(code: str, input_data: str, max_steps: int = 2000) -> dict:
             steps.append({
                 'line': frame.f_lineno,
                 'locals': locs,
-                'stdout': mock_stdout.getvalue()
+                'stdout': mock_stdout.getvalue(),
+                'explanation': explanations.get(frame.f_lineno, "Đang thực thi lệnh này...")
             })
             
         return trace_lines

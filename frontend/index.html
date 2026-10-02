@@ -311,101 +311,175 @@
         100%{background-position:-200% 0}
     }
 
-    /* DEBUGGER MODAL STYLES */
+    /* DEBUGGER MODAL STYLES (Thonny-like) */
     .debugger-modal {
         position: fixed; inset: 0; z-index: 10000;
-        background: rgba(0,0,0,0.8);
+        background: rgba(0,0,0,0.7);
         display: none; justify-content: center; align-items: center;
-        backdrop-filter: blur(4px);
+        backdrop-filter: blur(2px);
     }
     .debugger-content {
-        background: #1e1e2e; width: 90vw; height: 85vh;
-        border-radius: 12px; border: 1px solid #313244;
+        background: #2d2d2d; width: 90vw; height: 85vh;
+        border-radius: 6px; border: 1px solid #1a1a1a;
         display: flex; flex-direction: column; overflow: hidden;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
+    
+    /* FAKE WINDOW HEADER */
     .debugger-header {
-        background: #181825; padding: 12px 20px;
-        border-bottom: 1px solid #313244;
+        background: #3c3f41; padding: 6px 12px;
+        border-bottom: 1px solid #1a1a1a;
         display: flex; justify-content: space-between; align-items: center;
+        user-select: none;
     }
-    .debugger-title { font-weight: 600; color: #cdd6f4; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;}
-    .close-debugger { background: transparent; border: none; color: #f38ba8; font-size: 1.5rem; cursor: pointer; transition: 0.2s;}
-    .close-debugger:hover { text-shadow: 0 0 10px #f38ba8;}
+    .debugger-title { color: #dfdfdf; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;}
+    .close-debugger { 
+        background: transparent; border: none; color: #dfdfdf; font-size: 1.2rem; 
+        cursor: pointer; transition: 0.2s; padding: 0 8px; border-radius: 4px;
+    }
+    .close-debugger:hover { background: #e81123; color: white;}
+    
+    /* FAKE MENU BAR */
+    .debugger-menubar {
+        background: #3c3f41; padding: 2px 8px;
+        display: flex; gap: 16px; border-bottom: 1px solid #2b2b2b;
+        color: #cccccc; font-size: 0.85rem;
+    }
+    .menu-item { cursor: pointer; padding: 4px 6px; border-radius: 3px; }
+    .menu-item:hover { background: #4b4d4f; }
+    
+    /* TOOLBAR */
+    .debugger-toolbar {
+        background: #3c3f41; padding: 6px 12px;
+        display: flex; gap: 12px; border-bottom: 1px solid #1a1a1a;
+        align-items: center;
+    }
+    .tool-icon { font-size: 1.2rem; cursor: pointer; opacity: 0.8; }
+    .tool-icon:hover { opacity: 1; }
     
     .debugger-body {
-        display: flex; flex: 1; min-height: 0;
+        display: flex; flex: 1; min-height: 0; background: #2b2b2b;
     }
     .debugger-code {
-        flex: 2; border-right: 1px solid #313244; background: #1e1e2e;
-        overflow-y: auto; padding: 16px; font-family: 'JetBrains Mono', monospace;
-        font-size: 14px; line-height: 1.6; color: #cdd6f4;
+        flex: 2; border-right: 1px solid #1a1a1a; background: #2b2b2b;
+        overflow-y: auto; padding: 16px; font-family: 'JetBrains Mono', Consolas, monospace;
+        font-size: 15px; line-height: 1.6; color: #a9b7c6;
     }
-    .debugger-line { display: flex; padding: 0 4px; border-radius: 4px; }
-    .debugger-line.active { background: #f9e2af; color: #11111b; font-weight: bold; box-shadow: 0 0 10px rgba(249, 226, 175, 0.2); }
-    .debugger-lineno { width: 30px; color: #6c7086; text-align: right; margin-right: 16px; user-select: none; }
+    .debugger-line { display: flex; padding: 0 4px; border-radius: 2px; }
+    
+    /* Highlight like Thonny */
+    .debugger-line.active { background: #32593d; color: #a9b7c6; outline: 1px solid #4a8c5b;}
+    
+    .debugger-lineno { width: 30px; color: #606366; text-align: right; margin-right: 16px; user-select: none; }
     
     .debugger-sidebar {
-        flex: 1; display: flex; flex-direction: column; background: #11111b;
+        flex: 1; display: flex; flex-direction: column; background: #2b2b2b;
     }
     .debugger-vars { flex: 1; padding: 16px; overflow-y: auto; }
-    .vars-title { font-size: 0.9rem; color: #a6adc8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; font-weight: 600;}
+    .vars-title { font-size: 0.85rem; color: #cccccc; margin-bottom: 12px; font-weight: normal;}
     .var-table { width: 100%; border-collapse: collapse; }
-    .var-table th, .var-table td { padding: 8px; text-align: left; border-bottom: 1px solid #313244; font-family: 'JetBrains Mono', monospace; font-size: 13px;}
-    .var-table th { color: #bac2de; }
-    .var-table td { color: #a6e3a1; word-break: break-all;}
-    .var-table td:first-child { color: #89b4fa; font-weight: 600;}
+    .var-table th, .var-table td { padding: 4px 8px; text-align: left; border: 1px solid #3c3f41; font-family: 'JetBrains Mono', monospace; font-size: 13px;}
+    .var-table th { color: #cccccc; background: #3c3f41; font-weight: normal;}
+    .var-table td { color: #a5c261; }
+    .var-table td:first-child { color: #9876aa;}
     
-    .debugger-output { height: 120px; border-top: 1px solid #313244; padding: 12px; background: #1e1e2e;}
-    .output-title { font-size: 0.8rem; color: #a6adc8; margin-bottom: 8px;}
-    .output-content { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #cdd6f4; white-space: pre-wrap; margin: 0; }
+    .debugger-output { height: 120px; border-top: 1px solid #1a1a1a; padding: 12px; background: #2b2b2b;}
+    .output-title { font-size: 0.85rem; color: #cccccc; margin-bottom: 8px;}
+    .output-content { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a9b7c6; white-space: pre-wrap; margin: 0; }
     
+    /* AI EXPLANATION BOX */
+    .ai-explanation-box {
+        background: #1e1e2e; padding: 12px 16px;
+        border-top: 1px solid #1a1a1a;
+        display: flex; gap: 12px; align-items: center;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+    }
+    .ai-explanation-icon { font-size: 1.8rem; animation: float 3s ease-in-out infinite;}
+    .ai-explanation-text { color: #a6e3a1; font-size: 0.95rem; font-weight: 500; font-family: 'Inter', sans-serif;}
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+
     .debugger-controls {
-        background: #181825; padding: 16px 20px;
-        border-top: 1px solid #313244;
+        background: #3c3f41; padding: 12px 20px;
+        border-top: 1px solid #1a1a1a;
         display: flex; gap: 12px; justify-content: center; align-items: center;
     }
     .ctrl-btn { 
-        padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;
-        border: none; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+        padding: 6px 16px; border-radius: 4px; font-weight: 500; cursor: pointer;
+        border: 1px solid #555; display: flex; align-items: center; gap: 6px; transition: 0.1s;
+        font-family: 'Segoe UI', Tahoma, sans-serif;
     }
     .ctrl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-prev { background: #45475a; color: #cdd6f4; }
-    .btn-prev:hover:not(:disabled) { background: #585b70; }
-    .btn-next { background: #89b4fa; color: #11111b; }
-    .btn-next:hover:not(:disabled) { background: #b4befe; }
+    .btn-prev { background: #4c5052; color: #dfdfdf; }
+    .btn-prev:hover:not(:disabled) { background: #5c6062; }
+    .btn-next { background: #499c54; color: white; border-color: #3b8244;}
+    .btn-next:hover:not(:disabled) { background: #52ad5e; }
     </style>
 
     <!-- DEBUGGER MODAL -->
     <div class="debugger-modal" id="debugger-modal">
         <div class="debugger-content">
             <div class="debugger-header">
-                <div class="debugger-title"><span>🐞</span> Trình Gỡ Lỗi (Debugger)</div>
+                <div class="debugger-title">🐍 Thonny - Dành cho Onhsg</div>
                 <button class="close-debugger" id="close-debugger">&times;</button>
             </div>
+            
+            <div class="debugger-menubar">
+                <div class="menu-item">Tệp</div>
+                <div class="menu-item">Chỉnh sửa</div>
+                <div class="menu-item">Xem</div>
+                <div class="menu-item">Chạy</div>
+                <div class="menu-item">Công cụ</div>
+                <div class="menu-item">Trợ giúp</div>
+            </div>
+            
+            <div class="debugger-toolbar">
+                <span class="tool-icon" title="Chạy script">▶️</span>
+                <span class="tool-icon" title="Debug script">🐞</span>
+                <span style="border-left: 1px solid #555; height: 16px; margin: 0 4px;"></span>
+                <span class="tool-icon" title="Bước nhảy qua (F6)">🔂</span>
+                <span class="tool-icon" title="Bước nhảy vào (F7)">⬇️</span>
+                <span class="tool-icon" title="Nhảy ra ngoài">⬆️</span>
+                <span style="border-left: 1px solid #555; height: 16px; margin: 0 4px;"></span>
+                <span class="tool-icon" title="Dừng">🛑</span>
+            </div>
+
             <div class="debugger-body">
                 <div class="debugger-code" id="debugger-code-view">
                     <!-- Lines injected via JS -->
                 </div>
                 <div class="debugger-sidebar">
                     <div class="debugger-vars">
-                        <div class="vars-title">Danh sách biến</div>
+                        <div class="vars-title">Variables</div>
                         <table class="var-table">
-                            <thead><tr><th>Tên biến</th><th>Giá trị</th></tr></thead>
+                            <thead><tr><th>Name</th><th>Value</th></tr></thead>
                             <tbody id="debugger-vars-body">
                             </tbody>
                         </table>
                     </div>
                     <div class="debugger-output">
-                        <div class="output-title">Màn hình in ra (Stdout)</div>
+                        <div class="output-title">Shell</div>
                         <pre class="output-content" id="debugger-stdout"></pre>
                     </div>
                 </div>
             </div>
+            
+            <div class="ai-explanation-box">
+                <div class="ai-explanation-icon">🤖</div>
+                <div>
+                    <div style="font-size: 0.75rem; color: #a6adc8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">AI Mentor giải thích:</div>
+                    <div class="ai-explanation-text" id="debugger-explanation">Đang nạp dữ liệu...</div>
+                </div>
+            </div>
+
             <div class="debugger-controls">
                 <div style="margin-right: auto; color: #a6adc8; font-size: 14px;" id="debugger-status">Bước 0 / 0</div>
                 <button class="ctrl-btn btn-prev" id="debugger-prev">⏪ Lùi lại</button>
-                <button class="ctrl-btn btn-next" id="debugger-next">Bước tiếp theo ⏩</button>
+                <button class="ctrl-btn btn-next" id="debugger-next">Tới (F6) ⏩</button>
             </div>
         </div>
     </div>
