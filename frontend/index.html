@@ -167,23 +167,99 @@
         </div>
     </div>
 
-    <!-- ===== LOADING OVERLAY: TDat 3D ANIMATION + PROGRESS BAR ===== -->
-    <div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,10,20,0.92);backdrop-filter:blur(16px);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:0">
-        <!-- TDat 3D Scene -->
-        <div style="width:340px;height:150px;display:flex;align-items:center;justify-content:center;perspective:900px">
-            <span id="tdat-3d-box" style="font-family:'Inter',sans-serif;font-size:4.5rem;font-weight:900;letter-spacing:3px;background:linear-gradient(90deg,#ff0055,#ff5500,#ffcc00,#22c55e,#06b6d4,#3b82f6,#a855f7,#ec4899,#ff0055);background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 24px rgba(168,85,247,.8)) drop-shadow(0 0 48px rgba(236,72,153,.5));display:inline-block;transform-style:preserve-3d;will-change:transform,opacity">TDat</span>
-        </div>
-        <!-- Progress Container -->
-        <div style="width:320px;max-width:88vw;margin-top:8px">
-            <div style="width:100%;height:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:999px;overflow:hidden">
-                <div id="loading-progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899,#06b6d4);border-radius:999px;box-shadow:0 0 14px rgba(168,85,247,.8);transition:width .25s ease"></div>
+    <!-- ===== LOADING OVERLAY: TDat 3D REAL EXTRUSION + PROGRESS BAR ===== -->
+    <div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:0;overflow:hidden">
+
+        <!-- Nền tối gradient -->
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,#0f0525 0%,#06030f 60%,#000 100%)"></div>
+
+        <!-- Lưới grid mờ nền -->
+        <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.07) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 90% 80% at 50% 50%,black 40%,transparent 100%)"></div>
+
+        <!-- Orb glow trái -->
+        <div style="position:absolute;top:15%;left:5%;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.25) 0%,transparent 70%);filter:blur(40px);pointer-events:none"></div>
+        <!-- Orb glow phải -->
+        <div style="position:absolute;bottom:15%;right:5%;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,.22) 0%,transparent 70%);filter:blur(40px);pointer-events:none"></div>
+        <!-- Orb glow trên -->
+        <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(236,72,153,.15) 0%,transparent 70%);filter:blur(50px);pointer-events:none"></div>
+
+        <!-- Nội dung chính -->
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:0">
+
+            <!-- Chữ nhỏ bên trên -->
+            <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:.35em;text-transform:uppercase;color:rgba(168,85,247,.75);margin-bottom:24px;text-shadow:0 0 20px rgba(168,85,247,.6)">HSG Python</div>
+
+            <!-- === VÙNG 3D TDat === -->
+            <div id="tdat-scene-wrap" style="perspective:1200px;perspective-origin:50% 50%;display:flex;align-items:center;justify-content:center;width:100%;height:220px">
+                <div id="tdat-3d-box" style="display:inline-block;transform-style:preserve-3d;will-change:transform,opacity;position:relative;cursor:default">
+                    <!-- Bóng đổ phía sau giả 3D -->
+                    <span id="tdat-shadow-layer" style="
+                        position:absolute;inset:0;
+                        font-family:'Inter',sans-serif;font-size:9rem;font-weight:900;letter-spacing:8px;
+                        color:transparent;
+                        user-select:none;pointer-events:none;
+                        /* 30 lớp text-shadow tạo extrusion chiều sâu */
+                        text-shadow:
+                            2px 2px 0 #4c1d95,3px 3px 0 #4c1d95,4px 4px 0 #4c1d95,5px 5px 0 #4c1d95,
+                            6px 6px 0 #3b0764,7px 7px 0 #3b0764,8px 8px 0 #3b0764,9px 9px 0 #3b0764,
+                            10px 10px 0 #2e0652,11px 11px 0 #2e0652,12px 12px 0 #2e0652,13px 13px 0 #2e0652,
+                            14px 14px 0 #1e0438,15px 15px 0 #1e0438,16px 16px 0 #1e0438,17px 17px 0 #1e0438,
+                            18px 18px 0 #130228,19px 19px 0 #130228,20px 20px 0 #130228,21px 21px 0 #130228,
+                            22px 22px 0 #0c0218,23px 23px 0 #0c0218,24px 24px 1px #0c0218,
+                            25px 25px 4px rgba(0,0,0,.6),30px 30px 12px rgba(0,0,0,.5),40px 40px 30px rgba(0,0,0,.4);
+                    ">TDat</span>
+                    <!-- Mặt trước chữ TDat -->
+                    <span id="tdat-front" style="
+                        position:relative;z-index:1;
+                        font-family:'Inter',sans-serif;font-size:9rem;font-weight:900;letter-spacing:8px;
+                        background:linear-gradient(135deg,#ffffff 0%,#c4b5fd 30%,#a855f7 55%,#ec4899 80%,#f97316 100%);
+                        background-size:200% 200%;
+                        -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                        filter:drop-shadow(0 0 30px rgba(168,85,247,.9)) drop-shadow(0 0 60px rgba(236,72,153,.5));
+                        display:block;
+                    ">TDat</span>
+                </div>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-                <span id="loading-subtext" style="color:rgba(255,255,255,.55);font-size:.85rem;font-weight:500">Đang chấm 10 test cases...</span>
-                <span id="loading-percent" style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:800;color:#38bdf8;text-shadow:0 0 10px rgba(56,189,248,.6)">0%</span>
+
+            <!-- Tagline -->
+            <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.15em;margin-top:16px;text-align:center">
+                Đang chấm bài của bạn...
+            </div>
+
+            <!-- Dải chấm chờ động -->
+            <div id="tdat-dots" style="display:flex;gap:10px;margin-top:20px">
+                <div style="width:8px;height:8px;border-radius:50%;background:#a855f7;animation:tdat-dot-pulse 1.4s ease-in-out infinite;animation-delay:0s"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:#ec4899;animation:tdat-dot-pulse 1.4s ease-in-out infinite;animation-delay:.2s"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:#38bdf8;animation:tdat-dot-pulse 1.4s ease-in-out infinite;animation-delay:.4s"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;animation:tdat-dot-pulse 1.4s ease-in-out infinite;animation-delay:.6s"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:#f97316;animation:tdat-dot-pulse 1.4s ease-in-out infinite;animation-delay:.8s"></div>
+            </div>
+
+            <!-- ====== THANH LOADING ở cuối ====== -->
+            <div style="width:480px;max-width:88vw;margin-top:52px">
+                <!-- Track bar -->
+                <div style="width:100%;height:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,.4)">
+                    <div id="loading-progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899,#f97316);background-size:200% 100%;border-radius:999px;box-shadow:0 0 20px rgba(168,85,247,.9),0 0 40px rgba(236,72,153,.4);transition:width .25s ease;animation:progress-shimmer 2s linear infinite"></div>
+                </div>
+                <!-- Meta: subtext + % -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+                    <span id="loading-subtext" style="color:rgba(255,255,255,.5);font-size:.85rem;font-weight:500;font-family:'Inter',sans-serif">Đang chấm 10 test cases...</span>
+                    <span id="loading-percent" style="font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:800;color:#38bdf8;text-shadow:0 0 14px rgba(56,189,248,.7),0 0 28px rgba(56,189,248,.4)">0%</span>
+                </div>
             </div>
         </div>
     </div>
+
+    <style>
+    @keyframes tdat-dot-pulse {
+        0%,80%,100%{transform:scale(.7);opacity:.4}
+        40%{transform:scale(1.2);opacity:1}
+    }
+    @keyframes progress-shimmer {
+        0%{background-position:200% 0}
+        100%{background-position:-200% 0}
+    }
+    </style>
 
     <script src="/static/app.js"></script>
 </body>

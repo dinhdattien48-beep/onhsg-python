@@ -761,24 +761,25 @@ let currentLoadingPercent = 0;
 
 function showLoading(initialText = 'Đang chấm 10 test cases...') {
     const overlay = document.getElementById('loading-overlay');
-    const tdat = document.getElementById('tdat-3d-box');
+    const tdat3d = document.getElementById('tdat-3d-box');
+    const tdatFront = document.getElementById('tdat-front');
+    const tdatShadow = document.getElementById('tdat-shadow-layer');
     const fillEl = document.getElementById('loading-progress-fill');
     const percentEl = document.getElementById('loading-percent');
     const subtextEl = document.getElementById('loading-subtext');
 
     if (!overlay) return;
 
-    // Dùng display:flex thay cho class hidden
     overlay.style.display = 'flex';
     currentLoadingPercent = 0;
     if (fillEl) fillEl.style.width = '0%';
     if (percentEl) percentEl.textContent = '0%';
     if (subtextEl) subtextEl.textContent = initialText;
 
-    // === ANIMATION 3D TDat ===
-    if (tdat) {
+    // === ANIMATION 3D TDat (extrusion thật) ===
+    if (tdat3d) {
         let cycleStart = null;
-        const CYCLE = 4000; // 4 giây mỗi chu kỳ
+        const CYCLE = 5000; // 5 giây mỗi chu kỳ
 
         function animateTdat(ts) {
             if (!cycleStart) cycleStart = ts;
@@ -787,35 +788,57 @@ function showLoading(initialText = 'Đang chấm 10 test cases...') {
 
             let scale, rotY, rotX, opacity;
 
-            if (p < 0.35) {
-                // Bay từ tâm ra + xoay 2 vòng
-                const t = p / 0.35;
+            if (p < 0.30) {
+                // Bay từ tâm màn hình ra + xoay 2-3 vòng
+                const t = p / 0.30;
                 const ease = 1 - Math.pow(1 - t, 3);
-                scale = 0.02 + ease * 0.98;
+                scale = 0.01 + ease * 0.99;
                 rotY = -720 + ease * 720;
-                rotX = -360 + ease * 360;
+                rotX = -30 + ease * 30;
                 opacity = ease;
             } else if (p < 0.60) {
-                // Đứng yên đúng chiều đọc được 1s
-                scale = 1; rotY = 0; rotX = 0; opacity = 1;
-            } else if (p < 0.95) {
-                // Xoay ngược + nhỏ dần vào giữa
-                const t = (p - 0.60) / 0.35;
+                // Đứng yên đọc được + nghiêng nhẹ qua lại
+                const t = (p - 0.30) / 0.30;
+                const swing = Math.sin(t * Math.PI * 2) * 12;
+                scale = 1;
+                rotY = swing;
+                rotX = Math.sin(t * Math.PI) * 5;
+                opacity = 1;
+            } else if (p < 0.90) {
+                // Xoay ngược + nhỏ dần về tâm
+                const t = (p - 0.60) / 0.30;
                 const ease = t * t * t;
-                scale = 1 - ease * 0.98;
+                scale = 1 - ease * 0.99;
                 rotY = ease * 720;
-                rotX = ease * 360;
+                rotX = ease * 30;
                 opacity = 1 - ease;
             } else {
-                scale = 0.02; rotY = 720; rotX = 360; opacity = 0;
+                scale = 0.01; rotY = 720; rotX = 30; opacity = 0;
             }
 
-            tdat.style.transform = `scale(${scale}) rotateY(${rotY}deg) rotateX(${rotX}deg)`;
-            tdat.style.opacity = opacity;
+            tdat3d.style.transform = `scale(${scale}) rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+            tdat3d.style.opacity = opacity;
 
-            // Rainbow gradient animation
-            const shift = (ts / 30) % 100;
-            tdat.style.backgroundPosition = `${shift}% 0`;
+            // Gradient mặt trước chạy mượt
+            if (tdatFront) {
+                const shift = (ts / 25) % 200;
+                tdatFront.style.backgroundPosition = `${shift}% ${shift * 0.3}%`;
+            }
+
+            // Đổ bóng extrusion thay đổi theo góc xoay (tăng depth khi nhìn nghiêng)
+            if (tdatShadow) {
+                const absRotY = Math.abs(rotY % 360);
+                const depthFactor = Math.min(1, Math.sin((absRotY / 360) * Math.PI) * 1.5 + 0.3);
+                const dx = Math.sign(rotY) * depthFactor * 2;
+                const layers = [];
+                for (let i = 1; i <= 24; i++) {
+                    const dark = Math.max(0, 100 - i * 4);
+                    layers.push(`${dx * i}px ${i}px 0 hsl(270,80%,${dark * 0.3}%)`);
+                }
+                layers.push(`${dx * 25}px 25px 8px rgba(0,0,0,.6)`);
+                layers.push(`${dx * 35}px 35px 20px rgba(0,0,0,.4)`);
+                tdatShadow.style.textShadow = layers.join(',');
+            }
 
             loadingAnimFrame = requestAnimationFrame(animateTdat);
         }
