@@ -110,8 +110,9 @@ function initEventListeners() {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // Run & Submit
+    // Run, Debug & Submit
     document.getElementById('run-code').addEventListener('click', runCode);
+    document.getElementById('debug-code')?.addEventListener('click', startDebug);
     document.getElementById('submit-code').addEventListener('click', submitCode);
 
     // Start button
@@ -584,6 +585,122 @@ async function submitCode() {
         btn.innerHTML = '🚀 Nộp bài';
         hideLoading();
     }
+}
+
+// ============================================================================
+// DEBUGGER LOGIC
+// ============================================================================
+
+let debugSteps = [];
+let currentDebugStep = 0;
+
+async function startDebug() {
+    if (!currentProblemId) {
+        showToast('⚠️ Hãy chọn bài tập trước khi Debug!');
+        return;
+    }
+    const code = editor.getValue();
+    const btn = document.getElementById('debug-code');
+    
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Đang nạp...';
+    
+    // Tìm test_index đầu tiên bị sai, nếu không có thì lấy test 0
+    let targetTestIndex = 0;
+    if (progressData[currentProblemId] && progressData[currentProblemId].results) {
+        const results = progressData[currentProblemId].results;
+        const firstFailed = results.findIndex(r => r.status !== 'AC');
+        if (firstFailed !== -1) targetTestIndex = firstFailed;
+    }
+
+    try {
+        const result = await apiPost('/api/debug', {
+            problem_id: currentProblemId,
+            code: code,
+            test_index: targetTestIndex
+        });
+
+        if (result.status === 'error') {
+            showToast('⚠️ Lỗi Debug: ' + result.message);
+            return;
+        }
+
+        debugSteps = result.steps;
+        currentDebugStep = 0;
+        
+        if (debugSteps.length === 0) {
+            showToast('⚠️ Code không có bước chạy nào (có thể là code rỗng).');
+            return;
+        }
+
+        openDebuggerModal(code);
+        renderDebugStep();
+    } catch (e) {
+        showToast('⚠️ Lỗi kết nối Debugger: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🐞 Debug';
+    }
+}
+
+function openDebuggerModal(code) {
+    document.getElementById('debugger-modal').style.display = 'flex';
+    
+    // Render lines
+    const lines = code.split('\\n');
+    const codeView = document.getElementById('debugger-code-view');
+    codeView.innerHTML = lines.map((line, idx) => 
+        `<div class="debugger-line" id="dbg-line-${idx + 1}"><div class="debugger-lineno">${idx + 1}</div><div style="white-space:pre">${escapeHtml(line)}</div></div>`
+    ).join('');
+    
+    // Bind events
+    document.getElementById('close-debugger').onclick = () => {
+        document.getElementById('debugger-modal').style.display = 'none';
+    };
+    
+    document.getElementById('debugger-prev').onclick = () => {
+        if (currentDebugStep > 0) {
+            currentDebugStep--;
+            renderDebugStep();
+        }
+    };
+    
+    document.getElementById('debugger-next').onclick = () => {
+        if (currentDebugStep < debugSteps.length - 1) {
+            currentDebugStep++;
+            renderDebugStep();
+        }
+    };
+}
+
+function renderDebugStep() {
+    const step = debugSteps[currentDebugStep];
+    
+    // Highlight line
+    document.querySelectorAll('.debugger-line.active').forEach(el => el.classList.remove('active'));
+    const lineEl = document.getElementById(`dbg-line-${step.line}`);
+    if (lineEl) {
+        lineEl.classList.add('active');
+        lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Update vars
+    const varsBody = document.getElementById('debugger-vars-body');
+    if (Object.keys(step.locals).length === 0) {
+        varsBody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#6c7086;font-style:italic">Chưa có biến nào</td></tr>';
+    } else {
+        varsBody.innerHTML = Object.entries(step.locals).map(([k, v]) => 
+            `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(String(v))}</td></tr>`
+        ).join('');
+    }
+    
+    // Update stdout
+    document.getElementById('debugger-stdout').textContent = step.stdout || '(Trống)';
+    
+    // Update controls
+    document.getElementById('debugger-status').textContent = `Bước ${currentDebugStep + 1} / ${debugSteps.length} (Dòng ${step.line})`;
+    document.getElementById('debugger-prev').disabled = currentDebugStep === 0;
+    document.getElementById('debugger-next').disabled = currentDebugStep === debugSteps.length - 1;
 }
 
 // ============================================================================

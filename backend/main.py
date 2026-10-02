@@ -85,6 +85,12 @@ class RunRequest(BaseModel):
     input_data: str = ""
 
 
+class DebugRequest(BaseModel):
+    problem_id: str
+    code: str
+    test_index: int = 0
+
+
 class SettingsRequest(BaseModel):
     api_key: str = ""
     model_name: str = "gemini-3.8-flash"
@@ -393,6 +399,36 @@ async def get_settings():
         "has_server_key": has_server_key,
     }
 
+
+@app.post("/api/debug")
+async def debug_code(req: DebugRequest):
+    """API dùng để chạy debugger từng bước trên test case cụ thể."""
+    problem = get_problem(req.problem_id)
+    if not problem:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập")
+
+    test_cases = get_test_cases(req.problem_id)
+    if not test_cases or req.test_index >= len(test_cases) or req.test_index < 0:
+        raise HTTPException(status_code=404, detail="Không tìm thấy test case hợp lệ")
+
+    input_data = test_cases[req.test_index]["input"]
+    
+    # Import debugger function (tránh circular/circular-like imports if any)
+    try:
+        from debugger import run_debug_trace
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Tính năng Debugger chưa được kích hoạt")
+
+    result = run_debug_trace(req.code, input_data)
+    
+    if result["status"] == "error":
+        return {"status": "error", "message": result["error"]}
+        
+    return {
+        "status": "success",
+        "steps": result["steps"],
+        "final_stdout": result["final_stdout"]
+    }
 
 # ============================================================================
 # CHẠY SERVER
