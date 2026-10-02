@@ -316,10 +316,13 @@ async def submit_code(req: SubmitRequest):
 
     # Nếu AI sinh ra code mẫu mới (lần đầu tiên cho bài này), lưu vào cache
     if not cached_sample:
-        from ai_mentor import _sinh_code_mau
+        from ai_mentor import _sinh_code_mau, _format_code_mau_block
         new_sample = _sinh_code_mau(problem["description"], req.code)
         if new_sample:
             save_sample_code(req.problem_id, new_sample)
+            ty_le_dung = judge_result["score"] / judge_result["total"] if judge_result["total"] > 0 else 0
+            if ty_le_dung < 0.5 and "```python" not in ai_feedback:
+                ai_feedback += "\n" + _format_code_mau_block(new_sample)
 
     # 4. Lưu kết quả
     save_submission(

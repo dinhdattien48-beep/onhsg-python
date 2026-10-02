@@ -75,21 +75,21 @@ def analyze_student_code(api_key: str = "", model_name: str = "",
     # Uu tien phat hien code rong - khong can goi AI
     if _kiem_tra_code_rong(student_code):
         phan_code_mau = _format_code_mau_block(cached_sample_code)
-        return f"""### AI Mentor - Nhan xet bai lam
+        return f"""### 🤖 Lời nhận xét từ AI Mentor
 
-#### 1. Loi can sua
-- **Code chua co logic giai bai:** Em chi co cac dong `import` nhung chua viet bat ky logic nao de giai quyet yeu cau de bai.
-- Hay doc ky **De bai** roi suy nghi: *Du lieu dau vao la gi? Ket qua can in ra la gi? Can tinh toan gi de ra ket qua?*
-- Buoc tiep theo: doc input (`n = int(input())`), xu ly, roi in output.
+#### 1. Lỗi cần sửa
+- **Code chưa có logic giải bài:** Em chỉ có các dòng `import` nhưng chưa viết bất kỳ logic nào để giải quyết yêu cầu đề bài.
+- Hãy đọc kỹ **Đề bài** rồi suy nghĩ: *Dữ liệu đầu vào là gì? Kết quả cần in ra là gì? Cần tính toán gì để ra kết quả?*
+- Bước tiếp theo: đọc input (`n = int(input())`), xử lý, rồi in output.
 
-#### 2. Loai bo chi tiet thua & Viet code chuan
-- Chua co code de nhan xet. Hay viet logic giai bai truoc nhe!
+#### 2. Loại bỏ chi tiết thừa & Viết code chuẩn
+- Chưa có code để nhận xét. Hãy viết logic giải bài trước nhé!
 
-#### 3. Toi uu bang ham co san (Built-in) cua Python
-- `sum()`, `max()`, `min()`, `sorted()` la cac ham hay gap trong HSG. Se goi y cu the sau khi em co code.
+#### 3. Tối ưu bằng hàm có sẵn (Built-in) của Python
+- `sum()`, `max()`, `min()`, `sorted()` là các hàm hay gặp trong HSG. Sẽ gợi ý cụ thể sau khi em có code.
 
-#### 4. Phan tich do phuc tap thuat toan
-- Chua co code de phan tich. Viet solution truoc, AI Mentor se nhan xet ngay!
+#### 4. Phân tích độ phức tạp thuật toán
+- Chưa có code để phân tích. Viết solution trước, AI Mentor sẽ nhận xét ngay!
 {phan_code_mau}"""
 
     # Code mau cho prompt Gemini (chi yeu cau sinh khi chua co cache)
@@ -166,9 +166,9 @@ def _format_code_mau_block(cached_sample_code: str) -> str:
     if not cached_sample_code:
         return ""
     return f"""
-#### 5. Code Mau Goi Y (Tham khao de hieu huong giai)
+#### 5. Code Mẫu Gợi Ý (Tham khảo để hiểu hướng giải)
 
-> **Day la goi y tham khao** - Em hay doc hieu roi tu viet lai theo cach rieng cua minh!
+> **Đây là gợi ý tham khảo** - Em hãy đọc hiểu rồi tự viết lại theo cách riêng của mình nhé!
 
 ```python
 {cached_sample_code}
@@ -224,17 +224,17 @@ def generate_heuristic_feedback(problem_desc: str, student_code: str,
     # 1. Phan tich loi
     if diem_dat == tong_test:
         muc_1 = (
-            "Chuc mung em! Code vuot qua hoan hao 10/10 test cases.\n"
+            "Chúc mừng em! Code vượt qua hoàn hảo 10/10 test cases.\n"
             + _nhan_xet_code_tot(student_code)
         )
     else:
-        muc_1 = f"Bai lam dat {diem_dat}/{tong_test} test. Phan tich loi:\n"
+        muc_1 = f"Bài làm đạt {diem_dat}/{tong_test} test. Phân tích lỗi:\n"
         muc_1 += _nhan_xet_loi_cu_the(student_code, problem_desc, ly_do_sai)
 
     # 2. Chi tiet thua
     muc_2_items = _phat_hien_chi_tiet_thua(student_code)
     muc_2 = "\n".join(f"- {item}" for item in muc_2_items) if muc_2_items else \
-        "- Cach khai bao bien ro rang, mach lac, khong co thao tac thua thai."
+        "- Cách khai báo biến rõ ràng, mạch lạc, không có thao tác thừa thãi."
 
     # 3. Built-in
     muc_3_items = _goi_y_builtin(student_code, problem_desc)
@@ -256,18 +256,18 @@ def generate_heuristic_feedback(problem_desc: str, student_code: str,
             if code_mau_moi:
                 muc_5 = _format_code_mau_block(code_mau_moi)
 
-    return f"""### AI Mentor - Nhan xet bai lam
+    return f"""### 🤖 Lời nhận xét từ AI Mentor
 
-#### 1. Loi can sua
+#### 1. Lỗi cần sửa
 {muc_1}
 
-#### 2. Loai bo chi tiet thua & Viet code chuan
+#### 2. Loại bỏ chi tiết thừa & Viết code chuẩn
 {muc_2}
 
-#### 3. Toi uu bang ham co san (Built-in) cua Python
+#### 3. Tối ưu bằng hàm có sẵn (Built-in) của Python
 {muc_3}
 
-#### 4. Phan tich do phuc tap thuat toan
+#### 4. Phân tích độ phức tạp thuật toán
 {muc_4}
 {muc_5}"""
 
@@ -275,13 +275,13 @@ def generate_heuristic_feedback(problem_desc: str, student_code: str,
 def _nhan_xet_code_tot(student_code: str) -> str:
     diem_tot = []
     if "sys.stdin" in student_code:
-        diem_tot.append("Em da dung `sys.stdin.readline` - tang toc nhap du lieu chuan HSG.")
+        diem_tot.append("Em đã dùng `sys.stdin.readline` - tăng tốc nhập dữ liệu chuẩn HSG.")
     if "def " in student_code:
-        diem_tot.append("Em da tach code thanh ham (`def`) - rat chuyen nghiep va de debug.")
+        diem_tot.append("Em đã tách code thành hàm (`def`) - rất chuyên nghiệp và dễ debug.")
     if "sum(" in student_code or "max(" in student_code or "min(" in student_code:
-        diem_tot.append("Em da dung ham built-in cua Python (`sum/max/min`) - thuc hanh chuan thi HSG.")
+        diem_tot.append("Em đã dùng hàm built-in của Python (`sum/max/min`) - thực hành chuẩn thi HSG.")
     if not diem_tot:
-        diem_tot.append("Code chinh xac, xu ly dung yeu cau de bai.")
+        diem_tot.append("Code chính xác, xử lý đúng yêu cầu đề bài.")
     return "\n".join(f"- {d}" for d in diem_tot)
 
 
@@ -292,42 +292,42 @@ def _nhan_xet_loi_cu_the(student_code: str, problem_desc: str, ly_do_sai: set) -
         so_vong_lap = student_code.count("for ") + student_code.count("while ")
         if so_vong_lap >= 2:
             cac_loi.append(
-                f"**Qua gioi han thoi gian (TLE):** Em dang dung nhieu vong lap long nhau "
-                f"(phat hien {so_vong_lap} vong lap trong code). "
-                "Voi du lieu lon, O(N^2) se vuot qua 1 giay. "
-                "Hay thu dung `sum()`, `Counter`, hoac sap xep mot lan roi dung hai con tro."
+                f"**Quá giới hạn thời gian (TLE):** Em đang dùng nhiều vòng lặp lồng nhau "
+                f"(phát hiện {so_vong_lap} vòng lặp trong code). "
+                "Với dữ liệu lớn, $O(N^2)$ sẽ vượt quá 1 giây. "
+                "Hãy thử dùng `sum()`, `Counter`, hoặc sắp xếp một lần rồi dùng hai con trỏ."
             )
         else:
             cac_loi.append(
-                "**Qua gioi han thoi gian (TLE):** Phep tinh trong vong lap dang qua nang. "
-                "Them `import sys; input = sys.stdin.readline` va kiem tra co the "
-                "dung ham built-in thay the khong."
+                "**Quá giới hạn thời gian (TLE):** Phép tính trong vòng lặp đang quá nặng. "
+                "Thêm `import sys; input = sys.stdin.readline` và kiểm tra có thể "
+                "dùng hàm built-in thay thế không."
             )
 
     if "WA" in ly_do_sai:
         thieu_bien = []
         if student_code.count("if ") < 2:
-            thieu_bien.append("kiem tra dieu kien bien")
-        mo_ta_bien = f" (co the thieu xu ly: {', '.join(thieu_bien)})" if thieu_bien else ""
+            thieu_bien.append("kiểm tra điều kiện biên")
+        mo_ta_bien = f" (có thể thiếu xử lý: {', '.join(thieu_bien)})" if thieu_bien else ""
         cac_loi.append(
-            f"**Ket qua sai (WA){mo_ta_bien}:** Thuat toan bi sai o mot so truong hop. "
-            "Hay test thu: n=0, n=1, tat ca phan tu bang nhau, gia tri toi da 10^9."
+            f"**Kết quả sai (WA){mo_ta_bien}:** Thuật toán bị sai ở một số trường hợp. "
+            "Hãy test thử: n=0, n=1, tất cả phần tử bằng nhau, giá trị tối đa $10^9$."
         )
 
     if "RE" in ly_do_sai:
         nguyen_nhan = []
         if "/" in student_code:
-            nguyen_nhan.append("`ZeroDivisionError` - chia co the bi chia cho 0")
+            nguyen_nhan.append("`ZeroDivisionError` - có thể bị chia cho 0")
         if "[" in student_code and "]" in student_code:
-            nguyen_nhan.append("`IndexError` - truy cap phan tu ngoai gioi han mang")
-        mo_ta = "; ".join(nguyen_nhan) if nguyen_nhan else "chia cho 0 hoac truy cap mang ngoai bien"
+            nguyen_nhan.append("`IndexError` - truy cập phần tử ngoài giới hạn mảng")
+        mo_ta = "; ".join(nguyen_nhan) if nguyen_nhan else "chia cho 0 hoặc truy cập mảng ngoài biên"
         cac_loi.append(
-            f"**Loi thuc thi (RE):** Nguyen nhan co the trong code: {mo_ta}. "
-            "Them dieu kien kiem tra truoc khi tinh toan."
+            f"**Lỗi thực thi (RE):** Nguyên nhân có thể trong code: {mo_ta}. "
+            "Thêm điều kiện kiểm tra trước khi tính toán."
         )
 
     if not cac_loi:
-        cac_loi.append("Chua xac dinh duoc loi cu the - hay thu chay thu tung test nho.")
+        cac_loi.append("Chưa xác định được lỗi cụ thể - hãy thử chạy thử từng test nhỏ.")
 
     return "\n".join(f"- {loi}" for loi in cac_loi)
 
@@ -337,8 +337,8 @@ def _phat_hien_chi_tiet_thua(student_code: str) -> list:
 
     if "while " in student_code and "for " not in student_code:
         items.append(
-            "Neu da biet truoc so vong lap, dung `for i in range(n)` thay `while` "
-            "de code ngan hon va tranh lap vo tan."
+            "Nếu đã biết trước số vòng lặp, dùng `for i in range(n)` thay `while` "
+            "để code ngắn hơn và tránh lặp vô tận."
         )
 
     cac_dong = student_code.split("\n")
@@ -355,12 +355,12 @@ def _phat_hien_chi_tiet_thua(student_code: str) -> list:
 
     if print_trong_vong_lap >= 3:
         items.append(
-            f"Em dang goi `print()` ~{print_trong_vong_lap} lan trong vong lap. "
-            "Hay gom ket qua vao list roi dung `print('\\n'.join(ket_qua))` de in mot lan - nhanh hon nhieu."
+            f"Em đang gọi `print()` ~{print_trong_vong_lap} lần trong vòng lặp. "
+            "Hãy gom kết quả vào list rồi dùng `print('\\n'.join(ket_qua))` để in một lần - nhanh hơn nhiều."
         )
 
     if " = list()" in student_code:
-        items.append("Dung `[]` thay `list()` de khoi tao list - ngan hon va chuan Pythonic.")
+        items.append("Dùng `[]` thay `list()` để khởi tạo list - ngắn hơn và chuẩn Pythonic.")
 
     return items
 
@@ -371,39 +371,39 @@ def _goi_y_builtin(student_code: str, problem_desc: str) -> list:
 
     if "+=" in student_code and ("for " in student_code or "while " in student_code) and "sum(" not in student_code:
         items.append(
-            "**`sum(iterable)`**: Em dang cong don thu cong trong vong lap. "
-            "Ham `sum()` viet bang C, nhanh 3-5 lan: `tong = sum(danh_sach)`"
+            "**`sum(iterable)`**: Em đang cộng dồn thủ công trong vòng lặp. "
+            "Hàm `sum()` viết bằng C, nhanh gấp 3-5 lần: `tong = sum(danh_sach)`"
         )
 
     if (">" in student_code or "<" in student_code) and "max(" not in student_code and "min(" not in student_code:
         if re.search(r'if .+[><].+:', student_code):
             items.append(
-                "**`max()` / `min()`**: Thay vi so sanh thu cong bang `if`, "
-                "dung `max(a, b)` hoac `max(danh_sach)` - ngan gon hon rat nhieu."
+                "**`max()` / `min()`**: Thay vì so sánh thủ công bằng `if`, "
+                "dùng `max(a, b)` hoặc `max(danh_sach)` - ngắn gọn hơn rất nhiều."
             )
 
     if ("uoc" in de_lower or "gcd" in student_code.lower() or "boi" in de_lower) and "math.gcd" not in student_code:
         items.append(
-            "**`math.gcd(a, b)`**: Tim uoc chung lon nhat sieu nhanh: "
+            "**`math.gcd(a, b)`**: Tìm ước chung lớn nhất siêu nhanh: "
             "`import math; ket_qua = math.gcd(so_a, so_b)`."
         )
 
     if re.search(r'\w+\[.+\]\s*\+=\s*1', student_code) and "Counter" not in student_code:
         items.append(
-            "**`Counter(iterable)`** tu `collections`: Dem tan suat phan tu cuc nhanh: "
+            "**`Counter(iterable)`** từ `collections`: Đếm tần suất phần tử cực nhanh: "
             "`from collections import Counter; tan_suat = Counter(danh_sach)`."
         )
 
     if "sys.stdin" not in student_code:
         items.append(
-            "**Tang toc nhap lieu**: Them 2 dong dau bai: `import sys` va `input = sys.stdin.readline` "
-            "- tang toc doc du lieu 5-10 lan khi co nhieu dong nhap."
+            "**Tăng tốc nhập liệu**: Thêm 2 dòng đầu bài: `import sys` và `input = sys.stdin.readline` "
+            "- tăng tốc đọc dữ liệu gấp 5-10 lần khi có nhiều dòng nhập."
         )
 
     if not items:
         items.append(
-            "Em da dung kha tot cac cau truc chuan Python. "
-            "Tiep tuc thuc hanh `list comprehension` va cac ham built-in nhe!"
+            "Em đã dùng khá tốt các cấu trúc chuẩn Python. "
+            "Tiếp tục thực hành `list comprehension` và các hàm built-in nhé!"
         )
 
     return items
@@ -432,29 +432,29 @@ def _phan_tich_do_phuc_tap(student_code: str) -> str:
 
     if do_sau_max >= 3:
         return (
-            f"- **Do phuc tap hien tai:** Khoang **O(N^3)** (co {do_sau_max} vong lap long nhau).\n"
-            "- Nguy hiem! Voi N >= 1000, se bi TLE ngay. Can tai cau truc thuat toan."
+            f"- **Độ phức tạp hiện tại:** Khoảng **$O(N^3)$** (có {do_sau_max} vòng lặp lồng nhau).\n"
+            "- Nguy hiểm! Với $N \\ge 1000$, sẽ bị TLE ngay. Cần tái cấu trúc thuật toán."
         )
     elif do_sau_max == 2:
         return (
-            "- **Do phuc tap hien tai:** Khoang **O(N^2)** (2 vong lap long nhau).\n"
-            "- Chap nhan duoc voi N <= 5000, nhung se TLE khi N >= 100000. "
-            "Hay thu dung hai con tro hoac Hashing de dat O(N)."
+            "- **Độ phức tạp hiện tại:** Khoảng **$O(N^2)$** (2 vòng lặp lồng nhau).\n"
+            "- Chấp nhận được với $N \\le 5000$, nhưng sẽ TLE khi $N \\ge 10^5$. "
+            "Hãy thử dùng hai con trỏ hoặc Hashing để đạt $O(N)$."
         )
     elif do_sau_max == 1 and co_sort:
         return (
-            "- **Do phuc tap hien tai:** Khoang **O(N log N)** (1 vong lap + sap xep).\n"
-            "- Rat tot! Du nhanh voi N <= 1000000."
+            "- **Độ phức tạp hiện tại:** Khoảng **$O(N \\log N)$** (1 vòng lặp + sắp xếp).\n"
+            "- Rất tốt! Đủ nhanh với $N \\le 10^6$."
         )
     elif do_sau_max == 1:
         return (
-            "- **Do phuc tap hien tai:** Khoang **O(N)** (chi 1 vong lap don).\n"
-            "- Xuat sac! Xu ly duoc N = 10^7 trong 1 giay."
+            "- **Độ phức tạp hiện tại:** Khoảng **$O(N)$** (chỉ 1 vòng lặp đơn).\n"
+            "- Xuất sắc! Xử lý được $N = 10^7$ trong 1 giây."
         )
     else:
         return (
-            "- **Do phuc tap hien tai:** **O(1)** hoac O(log N).\n"
-            "- Toi uu tuyet doi!"
+            "- **Độ phức tạp hiện tại:** **$O(1)$** hoặc $O(\\log N)$.\n"
+            "- Tối ưu tuyệt đối!"
         )
 
 
