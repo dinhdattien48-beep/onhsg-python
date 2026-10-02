@@ -33,7 +33,7 @@ def _get_clean_models(requested_model: str) -> list:
     valid_models = []
     if requested_model:
         valid_models.append(requested_model.strip())
-    for m in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+    for m in ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
         if m not in valid_models:
             valid_models.append(m)
     return valid_models

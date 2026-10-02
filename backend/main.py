@@ -292,7 +292,7 @@ async def submit_code(req: SubmitRequest):
     # 3. Gọi AI Mentor: luôn gọi bất kể có API key hay không (fallback heuristic bắt buộc)
     ai_feedback = ""
     api_key = (req.api_key or "").strip() or os.environ.get("GEMINI_API_KEY", "").strip() or get_setting("api_key", "").strip()
-    model_name = (req.model_name or "").strip() or os.environ.get("GEMINI_MODEL", "").strip() or get_setting("model_name", "").strip() or "gemini-2.5-flash"
+    model_name = (req.model_name or "").strip() or os.environ.get("GEMINI_MODEL", "").strip() or get_setting("model_name", "").strip() or "gemini-3.8-flash"
 
     # Kiểm tra cache code mẫu cho bài này (chỉ sinh 1 lần, lưu mãi)
     cached_sample = get_sample_code(req.problem_id)
