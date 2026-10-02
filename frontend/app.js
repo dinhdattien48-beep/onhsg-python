@@ -789,20 +789,20 @@ function showLoading(initialText = 'Đang chấm 10 test cases...') {
             let scale, rotY, rotX, opacity;
 
             if (p < 0.30) {
-                // Bay từ tâm màn hình ra + xoay 2-3 vòng
+                // Bay từ tâm ra + xoay 2 vòng
                 const t = p / 0.30;
                 const ease = 1 - Math.pow(1 - t, 3);
                 scale = 0.01 + ease * 0.99;
                 rotY = -720 + ease * 720;
-                rotX = -30 + ease * 30;
+                rotX = 20 - ease * 35; // bắt đầu từ nhìn xuống, rồi về -15 độ
                 opacity = ease;
             } else if (p < 0.60) {
-                // Đứng yên đọc được + nghiêng nhẹ qua lại
+                // Đứng yên — nghiêng nhẹ qua lại quanh -15 độ (góc nhìn từ trên như ảnh)
                 const t = (p - 0.30) / 0.30;
-                const swing = Math.sin(t * Math.PI * 2) * 12;
+                const swing = Math.sin(t * Math.PI * 2) * 10; // dao động ±10 độ
                 scale = 1;
                 rotY = swing;
-                rotX = Math.sin(t * Math.PI) * 5;
+                rotX = -15 + Math.sin(t * Math.PI) * 4; // dao động nhẹ quanh -15
                 opacity = 1;
             } else if (p < 0.90) {
                 // Xoay ngược + nhỏ dần về tâm
@@ -810,33 +810,42 @@ function showLoading(initialText = 'Đang chấm 10 test cases...') {
                 const ease = t * t * t;
                 scale = 1 - ease * 0.99;
                 rotY = ease * 720;
-                rotX = ease * 30;
+                rotX = -15 + ease * 35;
                 opacity = 1 - ease;
             } else {
-                scale = 0.01; rotY = 720; rotX = 30; opacity = 0;
+                scale = 0.01; rotY = 720; rotX = 20; opacity = 0;
             }
 
-            tdat3d.style.transform = `scale(${scale}) rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+            tdat3d.style.transform = `scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
             tdat3d.style.opacity = opacity;
 
-            // Gradient mặt trước chạy mượt
+            // Gradient mặt trước chạy nhẹ
             if (tdatFront) {
-                const shift = (ts / 25) % 200;
-                tdatFront.style.backgroundPosition = `${shift}% ${shift * 0.3}%`;
+                const shift = (ts / 40) % 360;
+                tdatFront.style.filter = `
+                    drop-shadow(0 -2px 1px rgba(255,255,255,.4))
+                    drop-shadow(0 0 ${25 + Math.sin(ts/500)*8}px rgba(139,92,246,.8))
+                    drop-shadow(0 0 55px rgba(168,85,247,.5))
+                `;
             }
 
-            // Đổ bóng extrusion thay đổi theo góc xoay (tăng depth khi nhìn nghiêng)
+            // Đổ bóng extrusion thay đổi theo góc xoay thực tế
             if (tdatShadow) {
-                const absRotY = Math.abs(rotY % 360);
-                const depthFactor = Math.min(1, Math.sin((absRotY / 360) * Math.PI) * 1.5 + 0.3);
-                const dx = Math.sign(rotY) * depthFactor * 2;
+                // Tính offset bóng dựa trên rotY và rotX
+                const radY = rotY * Math.PI / 180;
+                const radX = rotX * Math.PI / 180;
+                const dxFactor = Math.sin(radY); // -1..1
+                const dyFactor = Math.sin(-radX) * 0.5 + 0.5; // 0..1
+
                 const layers = [];
-                for (let i = 1; i <= 24; i++) {
-                    const dark = Math.max(0, 100 - i * 4);
-                    layers.push(`${dx * i}px ${i}px 0 hsl(270,80%,${dark * 0.3}%)`);
+                for (let i = 1; i <= 15; i++) {
+                    const dx = dxFactor * i * 1.5;
+                    const dy = i * 2;
+                    const dark = Math.max(0, 45 - i * 3);
+                    layers.push(`${dx.toFixed(1)}px ${dy}px 0 hsl(265,75%,${dark}%)`);
                 }
-                layers.push(`${dx * 25}px 25px 8px rgba(0,0,0,.6)`);
-                layers.push(`${dx * 35}px 35px 20px rgba(0,0,0,.4)`);
+                layers.push(`${(dxFactor * 18).toFixed(1)}px 36px 8px rgba(0,0,0,.6)`);
+                layers.push(`${(dxFactor * 24).toFixed(1)}px 50px 20px rgba(0,0,0,.4)`);
                 tdatShadow.style.textShadow = layers.join(',');
             }
 

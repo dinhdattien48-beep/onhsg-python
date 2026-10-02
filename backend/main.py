@@ -324,24 +324,18 @@ async def submit_code(req: SubmitRequest):
         ai_feedback=ai_feedback,
     )
 
-    # 5. Ẩn input/output chi tiết của test 6-10 (chỉ hiện test 1-5)
+    # 5. Trả về kết quả đầy đủ cho tất cả 10 test (không ẩn test 6-10)
     sanitized_results = []
     for r in judge_result["results"]:
         entry = {
             "test": r["test"],
             "status": r["status"],
             "time_ms": r["time_ms"],
+            "input": r["input"][:2000] if len(r.get("input", "")) > 2000 else r.get("input", ""),
+            "student_output": r.get("student_output", "")[:2000],
+            "expected_output": r.get("expected_output", "")[:2000],
+            "error": r.get("error", "")[:500] if r.get("error") else "",
         }
-        if r["test"] <= 5:
-            entry["input"] = r["input"][:2000] if len(r["input"]) > 2000 else r["input"]
-            entry["student_output"] = r["student_output"][:2000]
-            entry["expected_output"] = r["expected_output"][:2000]
-            entry["error"] = r.get("error", "")
-        else:
-            entry["input"] = "(Ẩn - Test hiệu năng)"
-            entry["student_output"] = "(Ẩn)"
-            entry["expected_output"] = "(Ẩn)"
-            entry["error"] = r.get("error", "")[:200] if r.get("error") else ""
         sanitized_results.append(entry)
 
     return {

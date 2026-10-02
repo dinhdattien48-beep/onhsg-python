@@ -189,40 +189,88 @@
             <!-- Chữ nhỏ bên trên -->
             <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:.35em;text-transform:uppercase;color:rgba(168,85,247,.75);margin-bottom:24px;text-shadow:0 0 20px rgba(168,85,247,.6)">HSG Python</div>
 
-            <!-- === VÙNG 3D TDat === -->
-            <div id="tdat-scene-wrap" style="perspective:1200px;perspective-origin:50% 50%;display:flex;align-items:center;justify-content:center;width:100%;height:220px">
-                <div id="tdat-3d-box" style="display:inline-block;transform-style:preserve-3d;will-change:transform,opacity;position:relative;cursor:default">
-                    <!-- Bóng đổ phía sau giả 3D -->
+            <!-- === VÙNG 3D TDat - SLAB EXTRUSION NHƯ VẬT THỂ THẬT === -->
+            <div id="tdat-scene-wrap" style="perspective:1400px;perspective-origin:50% 40%;display:flex;align-items:center;justify-content:center;width:100%;height:260px">
+                <div id="tdat-3d-box" style="display:inline-block;transform-style:preserve-3d;will-change:transform,opacity;position:relative;cursor:default;line-height:1">
+
+                    <!-- LỚP EXTRUSION (đặt sau, tạo độ dày slab) -->
                     <span id="tdat-shadow-layer" style="
-                        position:absolute;inset:0;
-                        font-family:'Inter',sans-serif;font-size:9rem;font-weight:900;letter-spacing:8px;
-                        color:transparent;
+                        position:absolute;
+                        top:0;left:0;right:0;bottom:0;
+                        font-family:'Inter',sans-serif;
+                        font-size:clamp(5rem,12vw,10rem);
+                        font-weight:900;
+                        letter-spacing:6px;
+                        color:#1a0a3a;
                         user-select:none;pointer-events:none;
-                        /* 30 lớp text-shadow tạo extrusion chiều sâu */
                         text-shadow:
-                            2px 2px 0 #4c1d95,3px 3px 0 #4c1d95,4px 4px 0 #4c1d95,5px 5px 0 #4c1d95,
-                            6px 6px 0 #3b0764,7px 7px 0 #3b0764,8px 8px 0 #3b0764,9px 9px 0 #3b0764,
-                            10px 10px 0 #2e0652,11px 11px 0 #2e0652,12px 12px 0 #2e0652,13px 13px 0 #2e0652,
-                            14px 14px 0 #1e0438,15px 15px 0 #1e0438,16px 16px 0 #1e0438,17px 17px 0 #1e0438,
-                            18px 18px 0 #130228,19px 19px 0 #130228,20px 20px 0 #130228,21px 21px 0 #130228,
-                            22px 22px 0 #0c0218,23px 23px 0 #0c0218,24px 24px 1px #0c0218,
-                            25px 25px 4px rgba(0,0,0,.6),30px 30px 12px rgba(0,0,0,.5),40px 40px 30px rgba(0,0,0,.4);
+                            1px 2px 0 #2d1060,
+                            2px 4px 0 #2d1060,
+                            3px 6px 0 #241050,
+                            4px 8px 0 #241050,
+                            5px 10px 0 #1c0a40,
+                            6px 12px 0 #1c0a40,
+                            7px 14px 0 #150830,
+                            8px 16px 0 #150830,
+                            9px 18px 0 #0f0620,
+                            10px 20px 0 #0f0620,
+                            11px 22px 0 #090412,
+                            12px 24px 0 #090412,
+                            13px 26px 0 #060210,
+                            14px 28px 0 #060210,
+                            15px 30px 1px #04010a,
+                            16px 32px 2px rgba(0,0,0,.8),
+                            18px 36px 6px rgba(0,0,0,.6),
+                            22px 44px 14px rgba(0,0,0,.5),
+                            28px 55px 28px rgba(0,0,0,.35);
                     ">TDat</span>
-                    <!-- Mặt trước chữ TDat -->
+
+                    <!-- MẶT TRƯỚC (ánh sáng sáng, texture kim loại/đá) -->
                     <span id="tdat-front" style="
-                        position:relative;z-index:1;
-                        font-family:'Inter',sans-serif;font-size:9rem;font-weight:900;letter-spacing:8px;
-                        background:linear-gradient(135deg,#ffffff 0%,#c4b5fd 30%,#a855f7 55%,#ec4899 80%,#f97316 100%);
-                        background-size:200% 200%;
-                        -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                        filter:drop-shadow(0 0 30px rgba(168,85,247,.9)) drop-shadow(0 0 60px rgba(236,72,153,.5));
+                        position:relative;
+                        z-index:2;
+                        font-family:'Inter',sans-serif;
+                        font-size:clamp(5rem,12vw,10rem);
+                        font-weight:900;
+                        letter-spacing:6px;
                         display:block;
+                        background:linear-gradient(
+                            170deg,
+                            #ffffff 0%,
+                            #e8d5ff 15%,
+                            #c4a0ff 30%,
+                            #a064f0 45%,
+                            #7c3aed 60%,
+                            #5b21b6 75%,
+                            #3b0764 100%
+                        );
+                        background-size:100% 100%;
+                        -webkit-background-clip:text;
+                        -webkit-text-fill-color:transparent;
+                        filter:
+                            drop-shadow(0 -2px 1px rgba(255,255,255,.4))
+                            drop-shadow(0 0 30px rgba(139,92,246,.8))
+                            drop-shadow(0 0 60px rgba(168,85,247,.5));
+                    ">TDat</span>
+
+                    <!-- VIỀN SÁNG TRÊN CÙNG (highlight ánh sáng) -->
+                    <span style="
+                        position:absolute;
+                        top:0;left:0;right:0;bottom:0;
+                        font-family:'Inter',sans-serif;
+                        font-size:clamp(5rem,12vw,10rem);
+                        font-weight:900;
+                        letter-spacing:6px;
+                        -webkit-text-stroke:1px rgba(255,255,255,.15);
+                        color:transparent;
+                        pointer-events:none;user-select:none;
+                        z-index:3;
                     ">TDat</span>
                 </div>
             </div>
 
             <!-- Tagline -->
-            <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.15em;margin-top:16px;text-align:center">
+            <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.15em;margin-top:12px;text-align:center">
                 Đang chấm bài của bạn...
             </div>
 
@@ -236,7 +284,7 @@
             </div>
 
             <!-- ====== THANH LOADING ở cuối ====== -->
-            <div style="width:480px;max-width:88vw;margin-top:52px">
+            <div style="width:520px;max-width:88vw;margin-top:48px">
                 <!-- Track bar -->
                 <div style="width:100%;height:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,.4)">
                     <div id="loading-progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899,#f97316);background-size:200% 100%;border-radius:999px;box-shadow:0 0 20px rgba(168,85,247,.9),0 0 40px rgba(236,72,153,.4);transition:width .25s ease;animation:progress-shimmer 2s linear infinite"></div>
