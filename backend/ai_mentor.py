@@ -39,14 +39,31 @@ def _get_clean_models(requested_model: str) -> list:
     return valid_models
 
 
+def _kiem_tra_code_rong(code: str) -> bool:
+    """Kiem tra xem code co thuc su co logic giai bai hay khong."""
+    for dong in code.split("\n"):
+        stripped = dong.strip()
+        if (stripped and
+                not stripped.startswith("#") and
+                not stripped.startswith("import ") and
+                not stripped.startswith("from ") and
+                stripped not in ("input = sys.stdin.readline",
+                                 "input=sys.stdin.readline",
+                                 "# Viet code Python o day",
+                                 "# Viết code Python ở đây")):
+            return False
+    return True
+
+
 def analyze_student_code(api_key: str = "", model_name: str = "",
                           problem_desc: str = "", student_code: str = "",
-                          judge_results: dict = None) -> str:
+                          judge_results: dict = None,
+                          cached_sample_code: str = "") -> str:
     """
     Nhan xet bai lam hoc sinh dua vao de bai + code + ket qua cham.
-    - Thu Google Gemini truoc.
-    - Neu Gemini loi -> dung Heuristic Engine phan tich code that.
-    - Neu diem < 50% -> them phan Code Mau bien tieng Viet.
+    - cached_sample_code: code mau da luu tu truoc (khong sinh lai).
+    - Phat hien code rong (chi co import, khong co logic) -> bao loi ngay.
+    - Thu Google Gemini truoc; neu loi -> Heuristic Engine.
     """
     api_key = (api_key or "").strip() or os.environ.get("GEMINI_API_KEY", "").strip()
     req_model = (model_name or "").strip() or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip()
@@ -55,13 +72,33 @@ def analyze_student_code(api_key: str = "", model_name: str = "",
     tong_test = (judge_results or {}).get("total", 10)
     ty_le_dung = diem_dat / tong_test if tong_test > 0 else 0
 
-    # Yeu cau them code mau khi diem < 50%
-    yeu_cau_code_mau = ""
-    if ty_le_dung < 0.5:
-        yeu_cau_code_mau = """
+    # Uu tien phat hien code rong - khong can goi AI
+    if _kiem_tra_code_rong(student_code):
+        phan_code_mau = _format_code_mau_block(cached_sample_code)
+        return f"""### AI Mentor - Nhan xet bai lam
+
+#### 1. Loi can sua
+- **Code chua co logic giai bai:** Em chi co cac dong `import` nhung chua viet bat ky logic nao de giai quyet yeu cau de bai.
+- Hay doc ky **De bai** roi suy nghi: *Du lieu dau vao la gi? Ket qua can in ra la gi? Can tinh toan gi de ra ket qua?*
+- Buoc tiep theo: doc input (`n = int(input())`), xu ly, roi in output.
+
+#### 2. Loai bo chi tiet thua & Viet code chuan
+- Chua co code de nhan xet. Hay viet logic giai bai truoc nhe!
+
+#### 3. Toi uu bang ham co san (Built-in) cua Python
+- `sum()`, `max()`, `min()`, `sorted()` la cac ham hay gap trong HSG. Se goi y cu the sau khi em co code.
+
+#### 4. Phan tich do phuc tap thuat toan
+- Chua co code de phan tich. Viet solution truoc, AI Mentor se nhan xet ngay!
+{phan_code_mau}"""
+
+    # Code mau cho prompt Gemini (chi yeu cau sinh khi chua co cache)
+    yeu_cau_sinh_code_mau = ""
+    if ty_le_dung < 0.5 and not cached_sample_code:
+        yeu_cau_sinh_code_mau = """
 5. **Code Mau Goi Y** (vi bai dat duoi 50%): Viet 1 doan code Python hoan chinh giai bai tren,
-   su dung **ten bien tieng Viet khong dau** (vi du: so_luong, tong_gia_tri, danh_sach_phan_tu, so_nguyen_to)
-   de hoc sinh de hieu y nghia tung bien. Them comment tieng Viet giai thich tung buoc quan trong.
+   su dung ten bien tieng Viet khong dau (vi du: so_luong, tong_gia_tri, danh_sach_phan_tu)
+   de hoc sinh de hieu y nghia tung bien. Them comment tieng Viet giai thich tung buoc.
    Format: dat code trong khoi ```python ... ```.
 """
 
@@ -78,21 +115,21 @@ def analyze_student_code(api_key: str = "", model_name: str = "",
 === KET QUA CHAM ({diem_dat}/{tong_test} test dung) ===
 {json.dumps(judge_results or {}, ensure_ascii=False, indent=2)}
 
-Hay doc KY code hoc sinh va de bai o tren, sau do nhan xet theo dung {4 + (1 if ty_le_dung < 0.5 else 0)} muc (ngon ngu de hieu, khich le, khong han lam).
-Hay viet nhan xet bang tieng Viet co dau, chi doc CODE THAT cua hoc sinh de nhan xet - khong doan mo:
+Hay doc KY ca DE BAI va CODE CUA HOC SINH o tren roi nhan xet theo {4 + (1 if yeu_cau_sinh_code_mau else 0)} muc.
+Viet nhan xet bang tieng Viet co dau, chi doc CODE THAT cua hoc sinh - khong doan mo:
 
-1. **Loi can sua** - Doc code that cua hoc sinh, chi ro:
+1. **Loi can sua** - So sanh truc tiep code hoc sinh voi yeu cau de bai:
    - Dong code nao sai / thieu logic gi so voi yeu cau de bai.
    - Truong hop bien nao bi bo sot (so am, so 0, list rong, gia tri cuc lon...).
    - Neu co test WA/TLE/RE, giai thich nguyen nhan cu the trong code.
    - Neu dung het 10/10, khen ngoi cu the diem hay trong code.
 
-2. **Loai bo chi tiet thua** - Chi ra bien du, vong lap khong can thiet hoac doan code vong vo dua vao code hoc sinh.
+2. **Loai bo chi tiet thua** - Chi ra bien du, vong lap khong can thiet hoac code vong vo.
 
-3. **Toi uu bang ham Built-in Python** - Goi y ham C-level co the thay the doan code thu cong trong bai (sum, max, sorted, Counter, math.gcd...), giai thich ro chuc nang.
+3. **Toi uu bang ham Built-in Python** - Goi y ham thay the code thu cong (sum, max, sorted, Counter, math.gcd...).
 
-4. **Phan tich do phuc tap** - Neu O(...) hien tai cua code hoc sinh, giai thich vi sao nhanh/cham, so sanh voi cach toi uu.
-{yeu_cau_code_mau}
+4. **Phan tich do phuc tap** - Neu O(...) hien tai, giai thich vi sao nhanh/cham.
+{yeu_cau_sinh_code_mau}
 Tra loi bang tieng Viet co dau, dung Markdown formatting."""
 
     # Neu co API Key -> thu Gemini
@@ -102,18 +139,40 @@ Tra loi bang tieng Viet co dau, dung Markdown formatting."""
             try:
                 ket_qua = _call_with_sdk(api_key, target_model, prompt)
                 if ket_qua and len(ket_qua.strip()) > 50:
+                    # Neu da co cached_sample, gan them vao cuoi neu Gemini chua sinh
+                    if ty_le_dung < 0.5 and cached_sample_code and "```python" not in ket_qua:
+                        ket_qua += "\n" + _format_code_mau_block(cached_sample_code)
                     return ket_qua
             except Exception:
                 pass
             try:
                 ket_qua = _call_with_rest(api_key, target_model, prompt)
                 if ket_qua and len(ket_qua.strip()) > 50:
+                    if ty_le_dung < 0.5 and cached_sample_code and "```python" not in ket_qua:
+                        ket_qua += "\n" + _format_code_mau_block(cached_sample_code)
                     return ket_qua
             except Exception:
                 pass
 
     # Fallback: Heuristic Engine doc code that
-    return generate_heuristic_feedback(problem_desc, student_code, judge_results or {})
+    return generate_heuristic_feedback(
+        problem_desc, student_code, judge_results or {},
+        cached_sample_code=cached_sample_code
+    )
+
+
+def _format_code_mau_block(cached_sample_code: str) -> str:
+    """Dinh dang phan code mau de hien thi."""
+    if not cached_sample_code:
+        return ""
+    return f"""
+#### 5. Code Mau Goi Y (Tham khao de hieu huong giai)
+
+> **Day la goi y tham khao** - Em hay doc hieu roi tu viet lai theo cach rieng cua minh!
+
+```python
+{cached_sample_code}
+```"""
 
 
 def _call_with_sdk(api_key: str, model_name: str, prompt: str) -> str:
@@ -148,7 +207,9 @@ def _call_with_rest(api_key: str, model_name: str, prompt: str) -> str:
 # HEURISTIC ENGINE - DOC CODE THAT, NHAN XET CU THE
 # ============================================================================
 
-def generate_heuristic_feedback(problem_desc: str, student_code: str, judge_results: dict) -> str:
+def generate_heuristic_feedback(problem_desc: str, student_code: str,
+                                 judge_results: dict,
+                                 cached_sample_code: str = "") -> str:
     """
     AI Mentor Heuristic: doc code hoc sinh that va de bai de nhan xet cu the.
     Khong doan mo - chi nhan xet nhung gi thuc su co trong code.
@@ -182,20 +243,18 @@ def generate_heuristic_feedback(problem_desc: str, student_code: str, judge_resu
     # 4. Do phuc tap
     muc_4 = _phan_tich_do_phuc_tap(student_code)
 
-    # 5. Code mau neu < 50%
+    # 5. Code mau: uu tien dung cached, chi sinh moi neu chua co cache
     ty_le = diem_dat / tong_test if tong_test > 0 else 1
     muc_5 = ""
     if ty_le < 0.5:
-        code_mau = _sinh_code_mau(problem_desc, student_code)
-        muc_5 = f"""
-#### 5. Code Mau Goi Y (Diem duoi 50% - Xem de hieu huong giai)
-
-> **Day la goi y tham khao** - Em hay doc hieu roi tu viet lai theo cach rieng cua minh!
-
-```python
-{code_mau}
-```
-"""
+        if cached_sample_code:
+            # Dung code mau da cache (khong sinh lai)
+            muc_5 = _format_code_mau_block(cached_sample_code)
+        else:
+            # Sinh code mau lan dau (se duoc luu boi main.py)
+            code_mau_moi = _sinh_code_mau(problem_desc, student_code)
+            if code_mau_moi:
+                muc_5 = _format_code_mau_block(code_mau_moi)
 
     return f"""### AI Mentor - Nhan xet bai lam
 

@@ -61,6 +61,15 @@ def init_db():
         )
     """)
 
+    # Bảng cache code mẫu gợi ý cho từng bài (tạo 1 lần, lưu mãi)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sample_code (
+            problem_id TEXT PRIMARY KEY,
+            code TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -142,6 +151,29 @@ def get_setting(key: str, default: str = "") -> str:
     row = cursor.fetchone()
     conn.close()
     return row["value"] if row else default
+
+
+def get_sample_code(problem_id: str) -> str:
+    """Lấy code mẫu đã được cache cho bài tập (trả về '' nếu chưa có)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT code FROM sample_code WHERE problem_id = ?", (problem_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row["code"] if row else ""
+
+
+def save_sample_code(problem_id: str, code: str):
+    """Lưu code mẫu cho bài tập (chỉ lưu 1 lần, không ghi đè)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    # INSERT OR IGNORE: chỉ lưu lần đầu, bỏ qua nếu đã có
+    cursor.execute("""
+        INSERT OR IGNORE INTO sample_code (problem_id, code)
+        VALUES (?, ?)
+    """, (problem_id, code))
+    conn.commit()
+    conn.close()
 
 
 # Khởi tạo database khi import module

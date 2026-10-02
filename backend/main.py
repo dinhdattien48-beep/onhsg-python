@@ -40,7 +40,8 @@ from judge import judge_submission
 from ai_mentor import analyze_student_code
 from database import (
     save_submission, get_progress, get_submissions,
-    save_setting, get_setting
+    save_setting, get_setting,
+    get_sample_code, save_sample_code
 )
 
 # ============================================================================
@@ -282,35 +283,43 @@ async def submit_code(req: SubmitRequest):
         time_limit=problem.get("time_limit", 1.0)
     )
 
-    # 3. Gọi AI Mentor: nếu người dùng không truyền api_key thì tự động lấy từ biến môi trường
+    # 3. Gọi AI Mentor: luôn gọi bất kể có API key hay không (fallback heuristic bắt buộc)
     ai_feedback = ""
     api_key = (req.api_key or "").strip() or os.environ.get("GEMINI_API_KEY", "").strip() or get_setting("api_key", "").strip()
-    model_name = (req.model_name or "").strip() or os.environ.get("GEMINI_MODEL", "").strip() or get_setting("model_name", "").strip() or "gemini-3.8-flash"
+    model_name = (req.model_name or "").strip() or os.environ.get("GEMINI_MODEL", "").strip() or get_setting("model_name", "").strip() or "gemini-2.5-flash"
 
-    if api_key:
-        try:
-            ai_feedback = analyze_student_code(
-                api_key=api_key,
-                model_name=model_name,
-                problem_desc=problem["description"],
-                student_code=req.code,
-                judge_results={
-                    "score": judge_result["score"],
-                    "total": judge_result["total"],
-                    "details": [
-                        {
-                            "test": r["test"],
-                            "status": r["status"],
-                            "time_ms": r["time_ms"]
-                        }
-                        for r in judge_result["results"]
-                    ]
-                }
-            )
-        except Exception as e:
-            ai_feedback = f"⚠️ Lỗi khi gọi AI Mentor: {str(e)}"
-    else:
-        ai_feedback = "💡 Hãy cấu hình biến môi trường `GEMINI_API_KEY` trên server để nhận nhận xét và hướng dẫn tối ưu code tự động từ AI Mentor!"
+    # Kiểm tra cache code mẫu cho bài này (chỉ sinh 1 lần, lưu mãi)
+    cached_sample = get_sample_code(req.problem_id)
+
+    try:
+        ai_feedback = analyze_student_code(
+            api_key=api_key,
+            model_name=model_name,
+            problem_desc=problem["description"],
+            student_code=req.code,
+            judge_results={
+                "score": judge_result["score"],
+                "total": judge_result["total"],
+                "details": [
+                    {
+                        "test": r["test"],
+                        "status": r["status"],
+                        "time_ms": r["time_ms"]
+                    }
+                    for r in judge_result["results"]
+                ]
+            },
+            cached_sample_code=cached_sample,  # Truyền code mẫu đã cache (nếu có)
+        )
+    except Exception as e:
+        ai_feedback = f"⚠️ Lỗi khi gọi AI Mentor: {str(e)}"
+
+    # Nếu AI sinh ra code mẫu mới (lần đầu tiên cho bài này), lưu vào cache
+    if not cached_sample:
+        from ai_mentor import _sinh_code_mau
+        new_sample = _sinh_code_mau(problem["description"], req.code)
+        if new_sample:
+            save_sample_code(req.problem_id, new_sample)
 
     # 4. Lưu kết quả
     save_submission(
