@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Environment & Secret files
+.env
+.env.*
+!.env.example
+
+# SQLite Database
+*.db
+*.sqlite
+*.sqlite3
+backend/*.db
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Testing & Caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSG Python — Luyện thi Học Sinh Giỏi Tin học</title>
+    <meta name="description" content="Nền tảng dạy và luyện thi Học Sinh Giỏi Tin học bằng Python từ con số 0. Lộ trình 8 chặng, chấm bài tự động, AI Mentor nhận xét.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- CodeMirror 5 -->
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/python/python.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/theme/dracula.min.css">
+
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+
+    <!-- KaTeX for Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <!-- ===== HEADER ===== -->
+    <header id="app-header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-tdat" id="logo-tdat">TDat</span>
+            </div>
+        </div>
+        <div class="header-center">
+            <nav class="header-nav">
+                <button class="nav-btn active" data-view="learn" id="nav-learn">
+                    <span class="nav-icon">📚</span> Học tập
+                </button>
+                <button class="nav-btn" data-view="roadmap" id="nav-roadmap">
+                    <span class="nav-icon">🗺️</span> Lộ trình
+                </button>
+            </nav>
+        </div>
+        <div class="header-right">
+            <!-- Settings removed — API key pre-configured -->
+        </div>
+    </header>
+
+    <!-- ===== MAIN LAYOUT ===== -->
+    <main id="app-main">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>📖 Lộ trình học</h2>
+            </div>
+            <div class="sidebar-content" id="sidebar-stages">
+                <!-- Populated by JS -->
+            </div>
+        </aside>
+
+        <!-- LEFT PANEL: Theory / Problem -->
+        <section class="panel-left" id="panel-left">
+            <div class="panel-tabs">
+                <button class="tab-btn active" data-tab="theory" id="tab-theory">📖 Lý thuyết</button>
+                <button class="tab-btn" data-tab="problem" id="tab-problem">📝 Đề bài</button>
+                <button class="tab-btn" data-tab="ai-feedback" id="tab-ai">🤖 AI Mentor</button>
+            </div>
+            <div class="panel-content" id="left-content">
+                <!-- Welcome screen -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon">🎓</div>
+                    <h1>Chào mừng đến HSG Python!</h1>
+                    <p>Nền tảng luyện thi Học Sinh Giỏi Tin học bằng Python</p>
+                    <p class="welcome-sub">Bắt đầu từ con số 0 → Thi HSG tự tin 💪</p>
+                    <div class="welcome-features">
+                        <div class="feature-card">
+                            <span class="feature-icon">📚</span>
+                            <h3>8 Chặng học tập</h3>
+                            <p>Từ nhập xuất cơ bản đến thuật toán nâng cao</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">🔫</span>
+                            <h3>Góc Vũ Khí Python</h3>
+                            <p>Học hàm Built-in tối ưu code thi HSG</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">⚡</span>
+                            <h3>Chấm 10 test tự động</h3>
+                            <p>Phản hồi tức thì với AI Mentor</p>
+                        </div>
+                    </div>
+                    <button class="start-btn" id="start-learning">🚀 Bắt đầu học ngay!</button>
+                </div>
+                <!-- Theory content -->
+                <div class="content-section hidden" id="theory-content"></div>
+                <!-- Problem content -->
+                <div class="content-section hidden" id="problem-content"></div>
+                <!-- AI Feedback -->
+                <div class="content-section hidden" id="ai-content">
+                    <div class="ai-placeholder">
+                        <span class="ai-icon">🤖</span>
+                        <p>Nhận xét từ AI Mentor sẽ hiển thị ở đây sau khi em nộp bài.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DRAG RESIZE HANDLE -->
+        <div class="panel-resize-handle" id="panel-resize-handle" title="Kéo để thay đổi kích thước">
+            <div class="resize-dots">⋮⋮⋮</div>
+        </div>
+
+        <!-- RIGHT PANEL: Editor + Results -->
+        <section class="panel-right" id="panel-right">
+            <div class="editor-header">
+                <div class="editor-title">
+                    <span>💻</span> Code Editor
+                    <span class="lang-badge">Python</span>
+                </div>
+                <div class="editor-actions">
+                    <button class="action-btn run-btn" id="run-code" title="Chạy thử (Ctrl+Enter)">
+                        ▶️ Chạy thử
+                    </button>
+                    <button class="action-btn submit-btn" id="submit-code" title="Nộp bài chấm 10 test">
+                        🚀 Nộp bài
+                    </button>
+                    <button class="action-btn collapse-btn" id="toggle-editor-panel" title="Ẩn/Hiện Code Editor">
+                        ◀ Ẩn
+                    </button>
+                </div>
+            </div>
+
+            <div class="editor-container" id="editor-container">
+                <textarea id="code-editor"># Viết code Python ở đây
+</textarea>
+            </div>
+
+            <!-- Input area for Run -->
+            <div class="input-section" id="input-section">
+                <div class="input-header">
+                    <span>📥 Input (cho chạy thử)</span>
+                    <button class="toggle-input" id="toggle-input">▼</button>
+                </div>
+                <textarea id="custom-input" class="custom-input" placeholder="Nhập dữ liệu đầu vào..."></textarea>
+            </div>
+
+            <!-- Results area -->
+            <div class="results-section" id="results-section">
+                <div class="results-header">
+                    <span>📊 Kết quả</span>
+                </div>
+                <div class="results-content" id="results-content">
+                    <div class="results-placeholder">
+                        <p>Kết quả chạy / chấm bài sẽ hiển thị ở đây.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== ROADMAP VIEW ===== -->
+    <div class="roadmap-view hidden" id="roadmap-view">
+        <div class="roadmap-container" id="roadmap-container">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p id="loading-text">Đang xử lý...</p>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
