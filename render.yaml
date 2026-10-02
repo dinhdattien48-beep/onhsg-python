@@ -5,6 +5,8 @@ services:
     plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: GEMINI_API_KEY
         sync: false

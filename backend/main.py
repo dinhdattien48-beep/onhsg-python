@@ -93,6 +93,39 @@ class SettingsRequest(BaseModel):
 # API ENDPOINTS
 # ============================================================================
 
+@app.get("/health")
+async def health_check():
+    """Endpoint nhẹ kiểm tra server còn hoạt động (chống sleep 24/24)."""
+    return {"status": "alive"}
+
+
+async def keep_alive_background_task():
+    """Background task: mỗi 10 phút tự động gửi GET /health tới RENDER_EXTERNAL_URL để giữ server Render luôn thức 24/24."""
+    import asyncio
+    import httpx
+
+    # Chờ 60 giây sau khi server khởi động
+    await asyncio.sleep(60)
+    while True:
+        render_url = os.environ.get("RENDER_EXTERNAL_URL", "").strip() or os.environ.get("PING_URL", "").strip()
+        if render_url:
+            health_url = render_url.rstrip("/") + "/health"
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    res = await client.get(health_url)
+                    print(f"[Keep-Alive 24/7] Ping thành công {health_url} - Status {res.status_code}")
+            except Exception as e:
+                print(f"[Keep-Alive 24/7] Ping {health_url} gặp lỗi: {e}")
+        # Chờ 10 phút (600 giây)
+        await asyncio.sleep(600)
+
+
+@app.on_event("startup")
+async def startup_event():
+    import asyncio
+    asyncio.create_task(keep_alive_background_task())
+
+
 @app.get("/")
 async def serve_frontend():
     """Serve trang chủ frontend."""
@@ -345,11 +378,11 @@ async def update_settings(req: SettingsRequest):
 
 @app.get("/api/settings")
 async def get_settings():
-    """Lấy cài đặt hiện tại."""
-    has_server_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    """Lấy cài đặt hiện tại (bảo mật: không gửi API Key của giáo viên về trình duyệt)."""
+    has_server_key = bool(os.environ.get("GEMINI_API_KEY", "").strip() or get_setting("api_key", "").strip())
     default_model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
     return {
-        "api_key": get_setting("api_key", ""),
+        "api_key": "",  # Bảo mật: không để lộ API key giáo viên cho học sinh
         "model_name": os.environ.get("GEMINI_MODEL", "").strip() or get_setting("model_name", default_model),
         "has_server_key": has_server_key,
     }

@@ -2697,3 +2697,16 @@ def get_test_cases(problem_id: str):
     if gen:
         return gen()
     return []
+
+
+if __name__ == "__main__":
+    import os
+    import sys
+    # Đảm bảo import được database
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    try:
+        from database import init_db
+        init_db()
+        print(f"✅ Đã khởi tạo cơ sở dữ liệu thành công! Tổng số chặng: {len(STAGES)}")
+    except Exception as e:
+        print(f"⚠️ Khởi tạo database: {e}")

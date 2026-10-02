@@ -16,13 +16,16 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy toàn bộ mã nguồn vào container
 COPY . /app
 
-# Tạo user không phải root (UID 1000) tương thích quy định Hugging Face Spaces & cấp quyền thư mục
+# Tự động khởi tạo database từ seed_data.py trong build
+RUN python3 backend/seed_data.py
+
+# Tạo user không phải root (UID 1000) tương thích quy định Hugging Face Spaces & cấp toàn quyền thư mục
 RUN useradd -m -u 1000 user && \
     chown -R user:user /app
 USER user
 
-# Mở cổng 7860 (chuẩn của Hugging Face Spaces)
+# Mở cổng 7860 (chuẩn của Hugging Face Spaces) và cổng PORT động của Render
 EXPOSE 7860
 
-# Khởi chạy uvicorn: tự động nhận biến môi trường PORT (Render) hoặc fallback 7860 (Hugging Face Spaces)
-CMD ["sh", "-c", "python3 -m uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+# Tự động khởi tạo database từ seed_data.py và chạy uvicorn backend.main:app
+CMD ["sh", "-c", "python3 backend/seed_data.py && python3 -m uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-7860}"]

@@ -20,13 +20,24 @@ let stagesDetailCache = {};
 // INIT
 // ============================================================================
 
+let codeAutoSaveTimer = null;
+const STORAGE_PREFIX_CODE = 'hsg_code_';
+
 document.addEventListener('DOMContentLoaded', async () => {
     initEditor();
     initEventListeners();
     initEditorPanel();
+    initSettings();
     await loadStages();
     await loadProgress();
     renderSidebar();
+
+    // Khôi phục bài tập và đoạn code học sinh đang làm dở nếu có
+    const lastStageId = localStorage.getItem('hsg_last_stage_id');
+    const lastProblemId = localStorage.getItem('hsg_last_problem_id');
+    if (lastStageId && lastProblemId) {
+        await selectProblem(parseInt(lastStageId), lastProblemId);
+    }
 });
 
 // ============================================================================
@@ -53,6 +64,35 @@ function initEditor() {
     });
 
     editor.setValue('# Viết code Python ở đây\nimport sys\ninput = sys.stdin.readline\n\n');
+
+    // Tự động lưu code đang viết dở của từng bài vào localStorage (chống mất dữ liệu khi Cloud sleep/restart)
+    editor.on('change', () => {
+        if (currentProblemId) {
+            clearTimeout(codeAutoSaveTimer);
+            codeAutoSaveTimer = setTimeout(() => {
+                const code = editor.getValue();
+                saveProblemCodeToStorage(currentProblemId, code);
+            }, 300);
+        }
+    });
+}
+
+function getStoredProblemCode(problemId) {
+    if (!problemId) return null;
+    try {
+        return localStorage.getItem(`${STORAGE_PREFIX_CODE}${problemId}`);
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveProblemCodeToStorage(problemId, code) {
+    if (!problemId || code === undefined || code === null) return;
+    try {
+        localStorage.setItem(`${STORAGE_PREFIX_CODE}${problemId}`, code);
+    } catch (e) {
+        console.warn('Lỗi lưu code vào localStorage:', e);
+    }
 }
 
 // ============================================================================
@@ -368,6 +408,11 @@ async function selectProblem(stageId, problemId) {
     currentStageId = stageId;
     currentProblemId = problemId;
 
+    try {
+        localStorage.setItem('hsg_last_stage_id', stageId);
+        localStorage.setItem('hsg_last_problem_id', problemId);
+    } catch (e) {}
+
     // Load stage detail if needed
     const detail = await loadStageDetail(stageId);
     if (!detail) return;
@@ -418,10 +463,14 @@ async function selectProblem(stageId, problemId) {
         </div>
     `;
 
-    // Restore last code if exists
-    if (progressData[problemId]?.last_code) {
-        // Don't override if user has typed something different
+    // Restore code: Ưu tiên khôi phục code học sinh đang viết dở từ localStorage
+    const savedCode = getStoredProblemCode(problemId);
+    if (savedCode !== null && savedCode.trim() !== '') {
+        editor.setValue(savedCode);
+    } else {
+        editor.setValue('# Viết code Python ở đây\nimport sys\ninput = sys.stdin.readline\n\n');
     }
+    setTimeout(() => editor && editor.refresh(), 50);
 
     renderSidebar();
 }
@@ -472,10 +521,11 @@ async function submitCode() {
     }
 
     const code = editor.getValue();
-    const apiKeyEl = document.getElementById('api-key-input');
-    const modelNameEl = document.getElementById('model-name-input');
-    const apiKey = apiKeyEl ? apiKeyEl.value.trim() : '';
-    const modelName = modelNameEl ? modelNameEl.value.trim() : '';
+    saveProblemCodeToStorage(currentProblemId, code);
+
+    // Lấy API key riêng nếu học sinh có nhập, hoặc để trống để dùng AI có sẵn của giáo viên
+    const customApiKey = (localStorage.getItem('hsg_custom_api_key') || '').trim();
+    const customModel = (localStorage.getItem('hsg_custom_model') || 'gemini-3.8-flash').trim();
     const btn = document.getElementById('submit-code');
 
     btn.disabled = true;
@@ -486,8 +536,8 @@ async function submitCode() {
         const result = await apiPost('/api/submit', {
             problem_id: currentProblemId,
             code,
-            api_key: apiKey,
-            model_name: modelName,
+            api_key: customApiKey,
+            model_name: customModel,
         });
 
         renderTestResults(result);
@@ -854,4 +904,61 @@ function initEditorPanel() {
         setTimeout(() => editor && editor.refresh(), 50);
         showToast('✅ Đặt lại kích thước mặc định');
     });
+}
+
+// ============================================================================
+// SETTINGS MODAL (AI API KEY & MODEL)
+// ============================================================================
+
+function initSettings() {
+    const modal = document.getElementById('settings-modal');
+    const openBtn = document.getElementById('open-settings-btn');
+    const closeBtn = document.getElementById('close-settings-btn');
+    const cancelBtn = document.getElementById('cancel-settings-btn');
+    const saveBtn = document.getElementById('save-settings-btn');
+    const apiKeyInput = document.getElementById('custom-api-key');
+    const modelSelect = document.getElementById('custom-model-name');
+
+    if (!modal) return;
+
+    // Nạp cài đặt đã lưu trong localStorage của trình duyệt học sinh
+    const customKey = localStorage.getItem('hsg_custom_api_key') || '';
+    const customModel = localStorage.getItem('hsg_custom_model') || 'gemini-3.8-flash';
+    if (apiKeyInput) apiKeyInput.value = customKey;
+    if (modelSelect) modelSelect.value = customModel;
+
+    function openModal() {
+        if (apiKeyInput) apiKeyInput.value = localStorage.getItem('hsg_custom_api_key') || '';
+        if (modelSelect) modelSelect.value = localStorage.getItem('hsg_custom_model') || 'gemini-3.8-flash';
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+    }
+
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            const key = apiKeyInput ? apiKeyInput.value.trim() : '';
+            const model = modelSelect ? modelSelect.value.trim() : 'gemini-3.8-flash';
+
+            localStorage.setItem('hsg_custom_api_key', key);
+            localStorage.setItem('hsg_custom_model', model);
+
+            closeModal();
+            if (key) {
+                showToast('✅ Đã lưu API Key riêng của bạn!');
+            } else {
+                showToast('✅ Đã kích hoạt AI tích hợp sẵn của giáo viên!');
+            }
+        });
+    }
 }
