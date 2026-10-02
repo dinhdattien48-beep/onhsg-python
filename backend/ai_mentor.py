@@ -832,3 +832,113 @@ def generate_heuristic_feedback(problem_desc: str, student_code: str, judge_resu
 #### 4. Phân tích độ phức tạp thuật toán
 {sec4}
 """
+
+
+def _sinh_code_mau(problem_desc: str, student_code: str) -> str:
+    """Sinh code mau Python dung bien tieng Viet khong dau dua tren de bai."""
+    de_lower = problem_desc.lower()
+
+    neu_nguyen_to = "nguyen to" in de_lower or "prime" in de_lower
+    neu_uoc = "uoc chung" in de_lower or "gcd" in de_lower or "boi chung" in de_lower
+    neu_sap_xep = "sap xep" in de_lower or "sort" in de_lower
+    neu_tinh_tong = "tong" in de_lower or "sum" in de_lower
+    neu_tim_max = "lon nhat" in de_lower or "maximum" in de_lower
+    neu_tim_min = "nho nhat" in de_lower or "minimum" in de_lower
+    neu_dem = "dem" in de_lower or "count" in de_lower or "so luong" in de_lower
+
+    if neu_nguyen_to:
+        return (
+            "import sys\n"
+            "input = sys.stdin.readline\n\n"
+            "def kiem_tra_nguyen_to(so_can_kiem):\n"
+            "    # So nho hon 2 khong phai nguyen to\n"
+            "    if so_can_kiem < 2:\n"
+            "        return False\n"
+            "    # Kiem tra tu 2 den can bac hai\n"
+            "    for uoc_chia in range(2, int(so_can_kiem**0.5) + 1):\n"
+            "        if so_can_kiem % uoc_chia == 0:\n"
+            "            return False\n"
+            "    return True\n\n"
+            "so_luong_test = int(input())\n"
+            "for _ in range(so_luong_test):\n"
+            "    so_can_kiem = int(input())\n"
+            "    if kiem_tra_nguyen_to(so_can_kiem):\n"
+            "        print('YES')\n"
+            "    else:\n"
+            "        print('NO')\n"
+        )
+    elif neu_uoc:
+        return (
+            "import sys\n"
+            "import math\n"
+            "input = sys.stdin.readline\n\n"
+            "so_luong = int(input())\n"
+            "danh_sach_so = list(map(int, input().split()))\n\n"
+            "# Tim GCD cua toan bo mang\n"
+            "uoc_chung_lon_nhat = danh_sach_so[0]\n"
+            "for so_hien_tai in danh_sach_so[1:]:\n"
+            "    uoc_chung_lon_nhat = math.gcd(uoc_chung_lon_nhat, so_hien_tai)\n\n"
+            "print(uoc_chung_lon_nhat)\n"
+        )
+    elif neu_sap_xep:
+        return (
+            "import sys\n"
+            "input = sys.stdin.readline\n\n"
+            "so_luong_phan_tu = int(input())\n"
+            "danh_sach_gia_tri = list(map(int, input().split()))\n\n"
+            "# Sap xep tang dan (dung reverse=True neu muon giam dan)\n"
+            "danh_sach_da_sap_xep = sorted(danh_sach_gia_tri)\n\n"
+            "print(*danh_sach_da_sap_xep)\n"
+        )
+    elif neu_tinh_tong:
+        return (
+            "import sys\n"
+            "input = sys.stdin.readline\n\n"
+            "so_luong_phan_tu = int(input())\n"
+            "danh_sach_gia_tri = list(map(int, input().split()))\n\n"
+            "# Tinh tong bang ham built-in (nhanh nhat)\n"
+            "tong_gia_tri = sum(danh_sach_gia_tri)\n\n"
+            "print(tong_gia_tri)\n"
+        )
+    elif neu_tim_max or neu_tim_min:
+        ham = "max" if neu_tim_max else "min"
+        return (
+            "import sys\n"
+            "input = sys.stdin.readline\n\n"
+            "so_luong_phan_tu = int(input())\n"
+            "danh_sach_gia_tri = list(map(int, input().split()))\n\n"
+            f"# Tim gia tri {'lon nhat' if neu_tim_max else 'nho nhat'}\n"
+            f"gia_tri_can_tim = {ham}(danh_sach_gia_tri)\n"
+            "# Neu can vi tri: vi_tri = danh_sach_gia_tri.index(gia_tri_can_tim)\n\n"
+            "print(gia_tri_can_tim)\n"
+        )
+    elif neu_dem:
+        return (
+            "import sys\n"
+            "from collections import Counter\n"
+            "input = sys.stdin.readline\n\n"
+            "so_luong_phan_tu = int(input())\n"
+            "danh_sach_phan_tu = list(map(int, input().split()))\n\n"
+            "# Dem tan suat xuat hien tung phan tu\n"
+            "tan_suat_xuat_hien = Counter(danh_sach_phan_tu)\n\n"
+            "# Vi du: tim phan tu xuat hien nhieu nhat\n"
+            "phan_tu_pho_bien, so_lan = tan_suat_xuat_hien.most_common(1)[0]\n"
+            "print(phan_tu_pho_bien, so_lan)\n"
+        )
+    else:
+        return (
+            "import sys\n"
+            "input = sys.stdin.readline\n\n"
+            "# === DOC DU LIEU DAU VAO ===\n"
+            "so_luong = int(input())\n"
+            "danh_sach_gia_tri = list(map(int, input().split()))\n\n"
+            "# === XU LY CHINH ===\n"
+            "ket_qua = []  # Danh sach luu ket qua\n\n"
+            "for chi_so in range(so_luong):\n"
+            "    gia_tri_hien_tai = danh_sach_gia_tri[chi_so]\n"
+            "    # TODO: Them logic xu ly tai day theo yeu cau de bai\n"
+            "    ket_qua.append(gia_tri_hien_tai)\n\n"
+            "# === IN KET QUA ===\n"
+            "# In tat ca mot lan (nhanh hon print nhieu lan trong vong lap)\n"
+            "print('\\n'.join(map(str, ket_qua)))\n"
+        )
