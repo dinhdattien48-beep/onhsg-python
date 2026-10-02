@@ -756,75 +756,119 @@ function escapeHtml(text) {
 }
 
 let loadingProgressInterval = null;
+let loadingAnimFrame = null;
 let currentLoadingPercent = 0;
 
 function showLoading(initialText = 'Đang chấm 10 test cases...') {
     const overlay = document.getElementById('loading-overlay');
+    const tdat = document.getElementById('tdat-3d-box');
     const fillEl = document.getElementById('loading-progress-fill');
     const percentEl = document.getElementById('loading-percent');
     const subtextEl = document.getElementById('loading-subtext');
 
     if (!overlay) return;
 
-    overlay.classList.remove('hidden');
+    // Dùng display:flex thay cho class hidden
+    overlay.style.display = 'flex';
     currentLoadingPercent = 0;
     if (fillEl) fillEl.style.width = '0%';
     if (percentEl) percentEl.textContent = '0%';
     if (subtextEl) subtextEl.textContent = initialText;
 
+    // === ANIMATION 3D TDat ===
+    if (tdat) {
+        let cycleStart = null;
+        const CYCLE = 4000; // 4 giây mỗi chu kỳ
+
+        function animateTdat(ts) {
+            if (!cycleStart) cycleStart = ts;
+            const elapsed = (ts - cycleStart) % CYCLE;
+            const p = elapsed / CYCLE; // 0..1
+
+            let scale, rotY, rotX, opacity;
+
+            if (p < 0.35) {
+                // Bay từ tâm ra + xoay 2 vòng
+                const t = p / 0.35;
+                const ease = 1 - Math.pow(1 - t, 3);
+                scale = 0.02 + ease * 0.98;
+                rotY = -720 + ease * 720;
+                rotX = -360 + ease * 360;
+                opacity = ease;
+            } else if (p < 0.60) {
+                // Đứng yên đúng chiều đọc được 1s
+                scale = 1; rotY = 0; rotX = 0; opacity = 1;
+            } else if (p < 0.95) {
+                // Xoay ngược + nhỏ dần vào giữa
+                const t = (p - 0.60) / 0.35;
+                const ease = t * t * t;
+                scale = 1 - ease * 0.98;
+                rotY = ease * 720;
+                rotX = ease * 360;
+                opacity = 1 - ease;
+            } else {
+                scale = 0.02; rotY = 720; rotX = 360; opacity = 0;
+            }
+
+            tdat.style.transform = `scale(${scale}) rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+            tdat.style.opacity = opacity;
+
+            // Rainbow gradient animation
+            const shift = (ts / 30) % 100;
+            tdat.style.backgroundPosition = `${shift}% 0`;
+
+            loadingAnimFrame = requestAnimationFrame(animateTdat);
+        }
+
+        if (loadingAnimFrame) cancelAnimationFrame(loadingAnimFrame);
+        loadingAnimFrame = requestAnimationFrame(animateTdat);
+    }
+
+    // === PROGRESS BAR ===
     if (loadingProgressInterval) clearInterval(loadingProgressInterval);
 
-    // Chạy tăng dần % mượt mà theo từng giai đoạn
     const milestones = [
         { limit: 25, step: 4, text: 'Đang nạp môi trường Python...' },
         { limit: 60, step: 2.5, text: 'Đang chấm 10 test cases...' },
         { limit: 85, step: 1.5, text: 'Đang đo thời gian thực thi & kiểm tra biên...' },
         { limit: 96, step: 0.8, text: 'AI Mentor đang phân tích và nhận xét code...' }
     ];
-
-    let currentMilestoneIdx = 0;
+    let mi = 0;
 
     loadingProgressInterval = setInterval(() => {
         if (currentLoadingPercent >= 96) return;
-
-        const currentStage = milestones[currentMilestoneIdx];
-        if (currentStage) {
-            currentLoadingPercent = Math.min(currentStage.limit, currentLoadingPercent + currentStage.step);
-            if (subtextEl && currentStage.text) {
-                subtextEl.textContent = currentStage.text;
-            }
-            if (currentLoadingPercent >= currentStage.limit && currentMilestoneIdx < milestones.length - 1) {
-                currentMilestoneIdx++;
-            }
+        const stage = milestones[mi];
+        if (stage) {
+            currentLoadingPercent = Math.min(stage.limit, currentLoadingPercent + stage.step);
+            if (subtextEl) subtextEl.textContent = stage.text;
+            if (currentLoadingPercent >= stage.limit && mi < milestones.length - 1) mi++;
         } else {
             currentLoadingPercent = Math.min(96, currentLoadingPercent + 0.5);
         }
-
-        const displayVal = Math.floor(currentLoadingPercent);
-        if (fillEl) fillEl.style.width = `${displayVal}%`;
-        if (percentEl) percentEl.textContent = `${displayVal}%`;
+        const v = Math.floor(currentLoadingPercent);
+        if (fillEl) fillEl.style.width = v + '%';
+        if (percentEl) percentEl.textContent = v + '%';
     }, 70);
 }
 
 function hideLoading() {
     const overlay = document.getElementById('loading-overlay');
+    const tdat = document.getElementById('tdat-3d-box');
     const fillEl = document.getElementById('loading-progress-fill');
     const percentEl = document.getElementById('loading-percent');
     const subtextEl = document.getElementById('loading-subtext');
 
-    if (loadingProgressInterval) {
-        clearInterval(loadingProgressInterval);
-        loadingProgressInterval = null;
-    }
+    if (loadingProgressInterval) { clearInterval(loadingProgressInterval); loadingProgressInterval = null; }
+    if (loadingAnimFrame) { cancelAnimationFrame(loadingAnimFrame); loadingAnimFrame = null; }
 
     if (fillEl) fillEl.style.width = '100%';
     if (percentEl) percentEl.textContent = '100%';
     if (subtextEl) subtextEl.textContent = 'Hoàn tất chấm bài!';
 
-    // Chờ 300ms để người dùng thấy 100% rồi ẩn overlay mượt mà
     setTimeout(() => {
-        if (overlay) overlay.classList.add('hidden');
-    }, 300);
+        if (overlay) overlay.style.display = 'none';
+        if (tdat) { tdat.style.transform = ''; tdat.style.opacity = ''; }
+    }, 350);
 }
 
 function showToast(message) {
