@@ -755,13 +755,76 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function showLoading(text = 'Đang xử lý...') {
-    document.getElementById('loading-text').textContent = text;
-    document.getElementById('loading-overlay').classList.remove('hidden');
+let loadingProgressInterval = null;
+let currentLoadingPercent = 0;
+
+function showLoading(initialText = 'Đang chấm 10 test cases...') {
+    const overlay = document.getElementById('loading-overlay');
+    const fillEl = document.getElementById('loading-progress-fill');
+    const percentEl = document.getElementById('loading-percent');
+    const subtextEl = document.getElementById('loading-subtext');
+
+    if (!overlay) return;
+
+    overlay.classList.remove('hidden');
+    currentLoadingPercent = 0;
+    if (fillEl) fillEl.style.width = '0%';
+    if (percentEl) percentEl.textContent = '0%';
+    if (subtextEl) subtextEl.textContent = initialText;
+
+    if (loadingProgressInterval) clearInterval(loadingProgressInterval);
+
+    // Chạy tăng dần % mượt mà theo từng giai đoạn
+    const milestones = [
+        { limit: 25, step: 4, text: 'Đang nạp môi trường Python...' },
+        { limit: 60, step: 2.5, text: 'Đang chấm 10 test cases...' },
+        { limit: 85, step: 1.5, text: 'Đang đo thời gian thực thi & kiểm tra biên...' },
+        { limit: 96, step: 0.8, text: 'AI Mentor đang phân tích và nhận xét code...' }
+    ];
+
+    let currentMilestoneIdx = 0;
+
+    loadingProgressInterval = setInterval(() => {
+        if (currentLoadingPercent >= 96) return;
+
+        const currentStage = milestones[currentMilestoneIdx];
+        if (currentStage) {
+            currentLoadingPercent = Math.min(currentStage.limit, currentLoadingPercent + currentStage.step);
+            if (subtextEl && currentStage.text) {
+                subtextEl.textContent = currentStage.text;
+            }
+            if (currentLoadingPercent >= currentStage.limit && currentMilestoneIdx < milestones.length - 1) {
+                currentMilestoneIdx++;
+            }
+        } else {
+            currentLoadingPercent = Math.min(96, currentLoadingPercent + 0.5);
+        }
+
+        const displayVal = Math.floor(currentLoadingPercent);
+        if (fillEl) fillEl.style.width = `${displayVal}%`;
+        if (percentEl) percentEl.textContent = `${displayVal}%`;
+    }, 70);
 }
 
 function hideLoading() {
-    document.getElementById('loading-overlay').classList.add('hidden');
+    const overlay = document.getElementById('loading-overlay');
+    const fillEl = document.getElementById('loading-progress-fill');
+    const percentEl = document.getElementById('loading-percent');
+    const subtextEl = document.getElementById('loading-subtext');
+
+    if (loadingProgressInterval) {
+        clearInterval(loadingProgressInterval);
+        loadingProgressInterval = null;
+    }
+
+    if (fillEl) fillEl.style.width = '100%';
+    if (percentEl) percentEl.textContent = '100%';
+    if (subtextEl) subtextEl.textContent = 'Hoàn tất chấm bài!';
+
+    // Chờ 300ms để người dùng thấy 100% rồi ẩn overlay mượt mà
+    setTimeout(() => {
+        if (overlay) overlay.classList.add('hidden');
+    }, 300);
 }
 
 function showToast(message) {

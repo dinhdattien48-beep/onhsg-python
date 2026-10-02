@@ -171,11 +171,26 @@
         </div>
     </div>
 
-    <!-- ===== LOADING OVERLAY ===== -->
+    <!-- ===== LOADING OVERLAY (TDat 3D & PROGRESS BAR) ===== -->
     <div class="loading-overlay hidden" id="loading-overlay">
-        <div class="loading-spinner">
-            <div class="spinner"></div>
-            <p id="loading-text">Đang xử lý...</p>
+        <div class="loading-container-3d">
+            <!-- 3D TDat Flying & Spinning Scene -->
+            <div class="tdat-scene">
+                <div class="tdat-3d-box" id="tdat-3d-box">
+                    <span class="tdat-3d-text">TDat</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar & % -->
+            <div class="loading-progress-container">
+                <div class="loading-progress-track">
+                    <div class="loading-progress-fill" id="loading-progress-fill"></div>
+                </div>
+                <div class="loading-progress-meta">
+                    <span class="loading-status-text" id="loading-subtext">Đang chấm 10 test cases...</span>
+                    <span class="loading-percentage" id="loading-percent">0%</span>
+                </div>
+            </div>
         </div>
     </div>
 
