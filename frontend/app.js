@@ -344,11 +344,11 @@ function renderSidebar() {
         container.appendChild(group);
     }
 
-    // ---- Folder: Ôn HSG (mặc định mở) ----
+    // ---- Folder: Ôn HSG (đóng mặc định) ----
     makeFolder({
         icon: '🏆',
         label: 'Ôn HSG',
-        defaultOpen: true,
+        defaultOpen: false,
         content(body) {
             stagesData.forEach(stage => {
                 const group = document.createElement('div');
@@ -895,11 +895,11 @@ function renderRoadmap() {
     `;
     container.appendChild(titleEl);
 
-    // ---- Folder 1: Ôn HSG (mặc định mở) ----
+    // ---- Folder 1: Ôn HSG (đóng mặc định) ----
     makeRoadmapFolder({
         icon: '🏆',
         label: 'Ôn HSG',
-        defaultOpen: true,
+        defaultOpen: false,
         content(body) {
             stagesData.forEach(stage => {
                 const completedCount = stage.problems.filter(p =>
