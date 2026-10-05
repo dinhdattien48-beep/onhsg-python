@@ -859,50 +859,107 @@ function toggleTestDetail(id) {
 
 function renderRoadmap() {
     const container = document.getElementById('roadmap-container');
+    container.innerHTML = '';
 
-    let html = `
+    // ---- Helper tạo folder accordion trong roadmap ----
+    function makeRoadmapFolder({ icon, label, defaultOpen = false, content }) {
+        const wrap = document.createElement('div');
+        wrap.className = 'roadmap-folder';
+
+        const header = document.createElement('button');
+        header.className = `roadmap-folder-header${defaultOpen ? ' open' : ''}`;
+        header.innerHTML = `
+            <span class="rf-icon">${icon}</span>
+            <span class="rf-label">${label}</span>
+            <span class="rf-arrow">▶</span>
+        `;
+
+        const body = document.createElement('div');
+        body.className = `roadmap-folder-body${defaultOpen ? ' open' : ''}`;
+        content(body);
+
+        header.addEventListener('click', () => {
+            header.classList.toggle('open');
+            body.classList.toggle('open');
+        });
+
+        wrap.appendChild(header);
+        wrap.appendChild(body);
+        container.appendChild(wrap);
+    }
+
+    const titleEl = document.createElement('div');
+    titleEl.innerHTML = `
         <h1 class="roadmap-title">🗺️ Lộ trình Học Sinh Giỏi Python</h1>
         <p class="roadmap-subtitle">Từ con số 0 → Thi HSG tự tin • 8 chặng • 24 bài tập</p>
     `;
+    container.appendChild(titleEl);
 
-    stagesData.forEach(stage => {
-        const completedCount = stage.problems.filter(p =>
-            progressData[p.id]?.completed
-        ).length;
-        const totalCount = stage.problems.length;
+    // ---- Folder 1: Ôn HSG (mặc định mở) ----
+    makeRoadmapFolder({
+        icon: '🏆',
+        label: 'Ôn HSG',
+        defaultOpen: true,
+        content(body) {
+            stagesData.forEach(stage => {
+                const completedCount = stage.problems.filter(p =>
+                    progressData[p.id]?.completed
+                ).length;
+                const totalCount = stage.problems.length;
 
-        let stageClass = '';
-        if (completedCount === totalCount) stageClass = 'completed';
-        else if (completedCount > 0) stageClass = 'in-progress';
+                let stageClass = '';
+                if (completedCount === totalCount) stageClass = 'completed';
+                else if (completedCount > 0) stageClass = 'in-progress';
 
-        html += `
-            <div class="roadmap-stage ${stageClass}">
-                <div class="stage-number">${stage.id}</div>
-                <div class="stage-card" onclick="goToStage(${stage.id})">
-                    <div class="stage-card-title">
-                        ${stage.icon} Chặng ${stage.id}: ${stage.title}
+                const stageEl = document.createElement('div');
+                stageEl.className = `roadmap-stage ${stageClass}`;
+                let problemTags = '';
+                stage.problems.forEach(p => {
+                    const isCompleted = progressData[p.id]?.completed;
+                    problemTags += `<span class="roadmap-problem-tag ${isCompleted ? 'completed' : ''}">${isCompleted ? '✅' : '⬜'} ${p.title}</span>`;
+                });
+                stageEl.innerHTML = `
+                    <div class="stage-number">${stage.id}</div>
+                    <div class="stage-card" onclick="goToStage(${stage.id})">
+                        <div class="stage-card-title">${stage.icon} Chặng ${stage.id}: ${stage.title}</div>
+                        <div class="stage-card-desc">${completedCount}/${totalCount} bài hoàn thành</div>
+                        <div class="stage-card-problems">${problemTags}</div>
                     </div>
-                    <div class="stage-card-desc">${completedCount}/${totalCount} bài hoàn thành</div>
-                    <div class="stage-card-problems">
-        `;
-
-        stage.problems.forEach(p => {
-            const isCompleted = progressData[p.id]?.completed;
-            html += `
-                <span class="roadmap-problem-tag ${isCompleted ? 'completed' : ''}">
-                    ${isCompleted ? '✅' : '⬜'} ${p.title}
-                </span>
-            `;
-        });
-
-        html += `
-                    </div>
-                </div>
-            </div>
-        `;
+                `;
+                body.appendChild(stageEl);
+            });
+        }
     });
 
-    container.innerHTML = html;
+    // ---- Folder 2: Ôn TN THPT QGia ----
+    makeRoadmapFolder({
+        icon: '📝',
+        label: 'Ôn TN THPT QGia',
+        defaultOpen: false,
+        content(body) {
+            body.innerHTML = `<div class="roadmap-placeholder">📂 Chưa có nội dung — Sẽ cập nhật sau</div>`;
+        }
+    });
+
+    // ---- Folder 3: Luyện Đề ----
+    makeRoadmapFolder({
+        icon: '📋',
+        label: 'Luyện Đề',
+        defaultOpen: false,
+        content(body) {
+            body.innerHTML = `<div class="roadmap-placeholder">📂 Chưa có đề — Sẽ cập nhật sau</div>`;
+        }
+    });
+
+    // ---- Folder 4: BTap GV giao ----
+    makeRoadmapFolder({
+        icon: '✏️',
+        label: 'BTap GV giao',
+        defaultOpen: false,
+        content(body) {
+            body.innerHTML = `<div class="roadmap-placeholder">📂 Chưa có bài — GV thêm bài tập tại đây</div>`;
+        }
+    });
 }
 
 function goToStage(stageId) {
@@ -1168,7 +1225,7 @@ function initEditorPanel() {
     expandBtn.innerHTML = '▶ Code';
     document.body.appendChild(expandBtn);
 
-    let isCollapsed = false;
+    let isCollapsed = true;  // mặc định ẩn
     let savedWidth  = null;
 
     function collapsePanel() {
@@ -1198,6 +1255,10 @@ function initEditorPanel() {
         if (isCollapsed) expandPanel();
         else collapsePanel();
     });
+
+    // Auto-collapse khi tải trang
+    collapsePanel();
+
 
     expandBtn.addEventListener('click', expandPanel);
 
