@@ -12,21 +12,9 @@ BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-# Tự động nạp biến môi trường từ file .env nếu có (tiện lợi khi chạy local)
-for _env_candidate in [os.path.join(os.path.dirname(BACKEND_DIR), ".env"), os.path.join(BACKEND_DIR, ".env")]:
-    if os.path.exists(_env_candidate):
-        try:
-            with open(_env_candidate, "r", encoding="utf-8") as _f:
-                for _line in _f:
-                    _line = _line.strip()
-                    if _line and not _line.startswith("#") and "=" in _line:
-                        _k, _v = _line.split("=", 1)
-                        _k = _k.strip()
-                        _v = _v.strip().strip("'\"")
-                        if _k and _k not in os.environ:
-                            os.environ[_k] = _v
-        except Exception:
-            pass
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(BACKEND_DIR), ".env")
+load_dotenv(dotenv_path=env_path, override=True)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
