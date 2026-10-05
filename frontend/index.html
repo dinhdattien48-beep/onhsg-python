@@ -45,7 +45,17 @@
                 </button>
             </nav>
         </div>
-        <div class="header-right"></div>
+        <div class="header-right">
+            <button class="nav-btn" id="btn-admin-dashboard" style="display:none; color: var(--accent-primary);">
+                <span class="nav-icon">🛡️</span> Quản trị
+            </button>
+            <div id="auth-buttons">
+                <button class="nav-btn" id="btn-show-login">Đăng nhập</button>
+            </div>
+            <div id="user-profile-btn" style="display:none; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                <span class="nav-icon">👤</span> <span id="display-user-name" style="font-weight:bold;"></span>
+            </div>
+        </div>
     </header>
 
     <!-- ===== MAIN LAYOUT ===== -->
@@ -480,6 +490,96 @@
                 <div style="margin-right: auto; color: #a6adc8; font-size: 14px;" id="debugger-status">Bước 0 / 0</div>
                 <button class="ctrl-btn btn-prev" id="debugger-prev">⏪ Lùi lại</button>
                 <button class="ctrl-btn btn-next" id="debugger-next">Tới (F6) ⏩</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN VIEW ===== -->
+    <div class="admin-view hidden" id="admin-view">
+        <div class="admin-container">
+            <h2>🛡️ Bảng điều khiển Quản trị (Owner)</h2>
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Ngày tạo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-users-list">
+                        <!-- Render users via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODALS ===== -->
+    <!-- Login Modal -->
+    <div class="modal-overlay hidden" id="modal-login">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModals()">×</span>
+            <h2>Đăng nhập</h2>
+            <div class="form-group">
+                <label>Email (Gmail)</label>
+                <input type="email" id="login-email" placeholder="example@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="login-password" placeholder="••••••••">
+            </div>
+            <button class="btn-primary" id="btn-submit-login">Đăng nhập</button>
+            <p class="modal-switch">Chưa có tài khoản? <a href="#" id="link-to-register">Đăng ký ngay</a></p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal-overlay hidden" id="modal-register">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModals()">×</span>
+            <h2>Đăng ký tài khoản mới</h2>
+            <div class="form-group">
+                <label>Họ tên (Full Name)</label>
+                <input type="text" id="reg-name" placeholder="Nguyễn Văn A">
+            </div>
+            <div class="form-group">
+                <label>Email (Gmail)</label>
+                <input type="email" id="reg-email" placeholder="example@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="reg-password" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+                <label>Nhập lại mật khẩu</label>
+                <input type="password" id="reg-repassword" placeholder="••••••••">
+            </div>
+            <div class="form-group otp-group">
+                <label>Mã xác thực Mail</label>
+                <div class="otp-input-row">
+                    <input type="text" id="reg-otp" placeholder="123456" maxlength="6">
+                    <button class="btn-secondary" id="btn-send-otp">Gửi mã</button>
+                </div>
+                <small id="otp-status" style="color:var(--accent-primary);"></small>
+            </div>
+            <button class="btn-primary" id="btn-submit-register">Đăng ký</button>
+            <p class="modal-switch">Đã có tài khoản? <a href="#" id="link-to-login">Đăng nhập</a></p>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay hidden" id="modal-profile">
+        <div class="modal-content text-center">
+            <span class="modal-close" onclick="closeModals()">×</span>
+            <div style="font-size: 3rem; margin-bottom: 10px;">👤</div>
+            <h2 id="prof-name">Tên</h2>
+            <p class="prof-role" id="prof-role">Vai trò</p>
+            <p class="prof-email" id="prof-email">Email</p>
+            <div style="margin-top:20px;">
+                <button class="btn-danger" id="btn-logout">Đăng xuất</button>
             </div>
         </div>
     </div>

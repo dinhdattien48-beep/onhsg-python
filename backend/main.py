@@ -43,6 +43,7 @@ from database import (
     save_setting, get_setting,
     get_sample_code, save_sample_code
 )
+from auth import auth_router, admin_router
 
 # ============================================================================
 # KHỞI TẠO APP
@@ -67,6 +68,10 @@ app.add_middleware(
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+# Đăng ký các router Auth và Admin
+app.include_router(auth_router)
+app.include_router(admin_router)
 
 
 # ============================================================================

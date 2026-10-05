@@ -16,6 +16,10 @@ let progressData = {};
 let currentView = 'learn';  // 'learn' or 'roadmap'
 let stagesDetailCache = {};
 
+// Auth State
+let authToken = localStorage.getItem('auth_token');
+let currentUser = null;
+
 // ============================================================================
 // INIT
 // ============================================================================
@@ -28,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initEventListeners();
     initEditorPanel();
     initSettings();
+    await initAuth();
     await loadStages();
     await loadProgress();
     renderSidebar();
@@ -143,19 +148,38 @@ function toggleInput() {
 // ============================================================================
 
 async function apiGet(path) {
-    const res = await fetch(`${API_BASE}${path}`);
-    if (!res.ok) throw new Error(`API Error: ${res.status}`);
-    return res.json();
+    const headers = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const res = await fetch(`${API_BASE}${path}`, { headers });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || `API Error: ${res.status}`);
+    return data;
 }
 
 async function apiPost(path, data) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
     const res = await fetch(`${API_BASE}${path}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(`API Error: ${res.status}`);
-    return res.json();
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.detail || `API Error: ${res.status}`);
+    return resData;
+}
+
+async function apiPut(path, data) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const res = await fetch(`${API_BASE}${path}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(data),
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.detail || `API Error: ${res.status}`);
+    return resData;
 }
 
 // ============================================================================
@@ -1359,5 +1383,205 @@ function initSettings() {
                 showToast('✅ Đã kích hoạt AI tích hợp sẵn của giáo viên!');
             }
         });
+    }
+}
+
+// ============================================================================
+// AUTHENTICATION & ADMIN DASHBOARD
+// ============================================================================
+
+async function initAuth() {
+    const btnLogin = document.getElementById('btn-show-login');
+    const btnProfile = document.getElementById('user-profile-btn');
+    const nameDisplay = document.getElementById('display-user-name');
+    const btnAdmin = document.getElementById('btn-admin-dashboard');
+
+    if (authToken) {
+        try {
+            currentUser = await apiGet('/api/auth/profile');
+            btnLogin.style.display = 'none';
+            btnProfile.style.display = 'flex';
+            nameDisplay.textContent = currentUser.full_name;
+            if (currentUser.role === 'Owner') {
+                btnAdmin.style.display = 'inline-block';
+            }
+        } catch (e) {
+            console.warn("Phiên đăng nhập hết hạn hoặc lỗi:", e);
+            logout(false);
+        }
+    } else {
+        btnLogin.style.display = 'inline-block';
+        btnProfile.style.display = 'none';
+        btnAdmin.style.display = 'none';
+    }
+
+    // Modal toggles
+    btnLogin.addEventListener('click', () => openModal('modal-login'));
+    document.getElementById('link-to-register').addEventListener('click', (e) => { e.preventDefault(); closeModals(); openModal('modal-register'); });
+    document.getElementById('link-to-login').addEventListener('click', (e) => { e.preventDefault(); closeModals(); openModal('modal-login'); });
+    btnProfile.addEventListener('click', showProfileModal);
+    document.getElementById('btn-logout').addEventListener('click', () => logout(true));
+    btnAdmin.addEventListener('click', showAdminDashboard);
+
+    // Form handlers
+    document.getElementById('btn-send-otp').addEventListener('click', sendOtp);
+    document.getElementById('btn-submit-register').addEventListener('click', handleRegister);
+    document.getElementById('btn-submit-login').addEventListener('click', handleLogin);
+}
+
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+}
+
+function closeModals() {
+    document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden'));
+}
+
+async function sendOtp() {
+    const email = document.getElementById('reg-email').value.trim();
+    const statusLabel = document.getElementById('otp-status');
+    if (!email) return alert("Vui lòng nhập Email trước khi gửi mã.");
+    
+    statusLabel.textContent = "Đang gửi...";
+    try {
+        await apiPost('/api/auth/send-otp', { email });
+        statusLabel.textContent = "Đã gửi mã! Kiểm tra hộp thư (cả mục Spam).";
+        statusLabel.style.color = "#10b981";
+    } catch (e) {
+        statusLabel.textContent = e.message;
+        statusLabel.style.color = "#ef4444";
+    }
+}
+
+async function handleRegister() {
+    const full_name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const repassword = document.getElementById('reg-repassword').value;
+    const otp_code = document.getElementById('reg-otp').value.trim();
+
+    if (!full_name || !email || !password || !otp_code) return alert("Vui lòng điền đủ thông tin.");
+    if (password !== repassword) return alert("Mật khẩu không khớp.");
+
+    try {
+        const res = await apiPost('/api/auth/register', { full_name, email, password, otp_code });
+        alert(res.message);
+        closeModals();
+        openModal('modal-login');
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+async function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) return alert("Vui lòng nhập email và mật khẩu.");
+
+    try {
+        const res = await apiPost('/api/auth/login', { email, password });
+        authToken = res.access_token;
+        localStorage.setItem('auth_token', authToken);
+        closeModals();
+        await initAuth();
+        alert("Đăng nhập thành công!");
+    } catch (e) {
+        alert(e.message);
+    }
+}
+
+function logout(showAlert = true) {
+    authToken = null;
+    currentUser = null;
+    localStorage.removeItem('auth_token');
+    closeModals();
+    document.getElementById('btn-show-login').style.display = 'inline-block';
+    document.getElementById('user-profile-btn').style.display = 'none';
+    document.getElementById('btn-admin-dashboard').style.display = 'none';
+    if (showAlert) alert("Đã đăng xuất.");
+    // Trở về trang chủ
+    switchView('learn');
+}
+
+function showProfileModal() {
+    if (!currentUser) return;
+    document.getElementById('prof-name').textContent = currentUser.full_name;
+    document.getElementById('prof-role').textContent = `Vai trò: ${currentUser.role}`;
+    document.getElementById('prof-email').textContent = `Mail: ${currentUser.email}`;
+    openModal('modal-profile');
+}
+
+// === Admin Dashboard ===
+function showAdminDashboard() {
+    // Ẩn tất cả views khác
+    document.getElementById('app-main').style.display = 'none';
+    document.getElementById('roadmap-view').classList.add('hidden');
+    document.getElementById('admin-view').classList.remove('hidden');
+
+    // Chuyển nav active state
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('btn-admin-dashboard').classList.add('active');
+
+    loadAdminUsers();
+}
+
+// Ghi đè hàm switchView để hỗ trợ ẩn admin-view
+const _originalSwitchView = switchView;
+switchView = function(view) {
+    document.getElementById('admin-view').classList.add('hidden');
+    document.getElementById('app-main').style.display = 'flex';
+    document.getElementById('btn-admin-dashboard').classList.remove('active');
+    _originalSwitchView(view);
+};
+
+async function loadAdminUsers() {
+    const tbody = document.getElementById('admin-users-list');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Đang tải dữ liệu...</td></tr>';
+    try {
+        const res = await apiGet('/api/admin/users');
+        tbody.innerHTML = '';
+        res.users.forEach(u => {
+            const tr = document.createElement('tr');
+            
+            const roleSelect = document.createElement('select');
+            roleSelect.className = 'role-select';
+            ['Học Sinh', 'Giáo Viên', 'Owner'].forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r; opt.textContent = r;
+                if (u.role === r) opt.selected = true;
+                roleSelect.appendChild(opt);
+            });
+            roleSelect.addEventListener('change', (e) => changeUserRole(u.id, e.target.value));
+
+            tr.innerHTML = `
+                <td>${u.id}</td>
+                <td>${u.full_name}</td>
+                <td>${u.email}</td>
+                <td class="role-cell"></td>
+                <td>${new Date(u.created_at).toLocaleString('vi-VN')}</td>
+            `;
+            tr.querySelector('.role-cell').appendChild(roleSelect);
+            tbody.appendChild(tr);
+        });
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Lỗi: ${e.message}</td></tr>`;
+    }
+}
+
+async function changeUserRole(userId, newRole) {
+    if (!confirm(`Xác nhận đổi quyền của người dùng ID ${userId} thành ${newRole}?`)) {
+        loadAdminUsers(); // revert
+        return;
+    }
+    try {
+        await apiPut(`/api/admin/users/${userId}/role`, { role: newRole });
+        alert(`Đã đổi quyền thành ${newRole}`);
+        // Nếu tự đổi quyền bản thân thì cần tải lại auth
+        if (currentUser && currentUser.id === userId) {
+            initAuth();
+        }
+    } catch (e) {
+        alert("Lỗi: " + e.message);
+        loadAdminUsers(); // revert
     }
 }

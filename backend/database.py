@@ -70,7 +70,50 @@ def init_db():
         )
     """)
 
+    # Bảng lưu thông tin người dùng (Authentication)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'Học Sinh',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Bảng lưu mã xác thực OTP (Đăng ký)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS otp_codes (
+            email TEXT PRIMARY KEY,
+            otp_code TEXT NOT NULL,
+            expires_at TIMESTAMP NOT NULL
+        )
+    """)
+
     conn.commit()
+    conn.close()
+
+
+def init_admin_account():
+    """Tự động khởi tạo tài khoản Owner mặc định nếu chưa tồn tại."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE email = ?", ("dinhdattien48@gmail.com",))
+    if not cursor.fetchone():
+        try:
+            import bcrypt
+            hashed_pwd = bcrypt.hashpw(b"@Tiendat123123", bcrypt.gensalt()).decode('utf-8')
+            
+            cursor.execute("""
+                INSERT INTO users (full_name, email, password_hash, role)
+                VALUES (?, ?, ?, ?)
+            """, ("Đinh Tiến Đạt", "dinhdattien48@gmail.com", hashed_pwd, "Owner"))
+            conn.commit()
+            print("Da khoi tao tai khoan Owner mac dinh: dinhdattien48@gmail.com")
+        except ImportError:
+            print("Canh bao: Chua cai bcrypt, bo qua seed Owner.")
+    
     conn.close()
 
 
@@ -176,5 +219,6 @@ def save_sample_code(problem_id: str, code: str):
     conn.close()
 
 
-# Khởi tạo database khi import module
+# Khởi tạo database và seed dữ liệu khi import module
 init_db()
+init_admin_account()
