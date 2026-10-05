@@ -19,7 +19,7 @@ ACCESS_TOKEN_EXPIRE_DAYS = 30
 
 # === Cấu hình Mail ===
 SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+SMTP_PORT = 465
 SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
 SMTP_APP_PASSWORD = os.environ.get("SMTP_APP_PASSWORD", "")
 
@@ -74,8 +74,7 @@ def send_email_otp(to_email: str, otp: str):
     msg['From'] = SMTP_EMAIL
     msg['To'] = to_email
 
-    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-    server.starttls()
+    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
     server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
     server.send_message(msg)
     server.quit()
