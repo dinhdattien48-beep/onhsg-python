@@ -596,6 +596,13 @@ a:hover {
     display: block;
 }
 
+.sidebar-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 8px 4px;
+    opacity: 0.6;
+}
+
 /* ===== NESTED FOLDER (Level 1 — Accordion) ===== */
 .folder-group {
     margin-bottom: 2px;
