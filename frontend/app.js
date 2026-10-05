@@ -890,8 +890,8 @@ function renderRoadmap() {
 
     const titleEl = document.createElement('div');
     titleEl.innerHTML = `
-        <h1 class="roadmap-title">🗺️ Lộ trình Học Sinh Giỏi Python</h1>
-        <p class="roadmap-subtitle">Từ con số 0 → Thi HSG tự tin • 8 chặng • 24 bài tập</p>
+        <h1 class="roadmap-title">🗺️ Lộ trình Học Tập Python</h1>
+        <p class="roadmap-subtitle">Từ con số 0 → Chinh phục mọi kỳ thi</p>
     `;
     container.appendChild(titleEl);
 
