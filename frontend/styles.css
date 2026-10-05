@@ -596,6 +596,86 @@ a:hover {
     display: block;
 }
 
+/* ===== NESTED FOLDER (Level 1 — Accordion) ===== */
+.folder-group {
+    margin-bottom: 2px;
+}
+
+.folder-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.83rem;
+    font-weight: 700;
+    width: 100%;
+    text-align: left;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    letter-spacing: 0.01em;
+    border-left: 3px solid transparent;
+}
+
+.folder-header:hover {
+    background: var(--bg-hover);
+    border-left-color: var(--accent-primary);
+}
+
+.folder-header.open {
+    background: rgba(99, 102, 241, 0.1);
+    border-left-color: var(--accent-primary);
+    color: var(--accent-secondary);
+}
+
+.folder-header .folder-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.folder-header .folder-label {
+    flex: 1;
+}
+
+.folder-arrow {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.folder-header.open .folder-arrow {
+    transform: rotate(90deg);
+    color: var(--accent-primary);
+}
+
+.folder-content {
+    display: none;
+    padding: 4px 0 4px 8px;
+    border-left: 1px solid var(--border-subtle);
+    margin-left: 10px;
+    animation: expandIn 0.2s ease-out;
+}
+
+.folder-content.open {
+    display: block;
+}
+
+.folder-placeholder {
+    padding: 10px 12px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-style: italic;
+    text-align: center;
+    border: 1px dashed var(--border-subtle);
+    border-radius: var(--radius-sm);
+    margin: 6px 4px;
+}
+
 .problem-link {
     display: flex;
     align-items: center;
@@ -1628,10 +1708,6 @@ a:hover {
     color: var(--success);
 }
 
-/* ===== LOADING OVERLAY ===== */
-.loading-overlay {
-    position: fixed;
-    top: 0;
 /* ===== 3D TDAT LOADING OVERLAY & PROGRESS BAR ===== */
 .loading-overlay {
     position: fixed;
@@ -1682,6 +1758,7 @@ a:hover {
     );
     background-size: 300% 100%;
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: rainbowFlow 3s linear infinite;
     filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.75))

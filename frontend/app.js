@@ -317,63 +317,127 @@ function renderSidebar() {
     const container = document.getElementById('sidebar-stages');
     container.innerHTML = '';
 
-    stagesData.forEach(stage => {
+    // ---- Helper: tạo folder Level-1 ----
+    function makeFolder({ icon, label, defaultOpen, content }) {
         const group = document.createElement('div');
-        group.className = 'stage-group';
-
-        // Count completed problems
-        const completedCount = stage.problems.filter(p =>
-            progressData[p.id]?.completed
-        ).length;
-        const totalCount = stage.problems.length;
+        group.className = 'folder-group';
 
         const header = document.createElement('button');
-        header.className = `stage-header ${currentStageId === stage.id ? 'active' : ''}`;
+        header.className = `folder-header${defaultOpen ? ' open' : ''}`;
         header.innerHTML = `
-            <span class="stage-icon">${stage.icon}</span>
-            <span class="stage-title">${stage.title}</span>
-            <span class="stage-progress">${completedCount}/${totalCount}</span>
+            <span class="folder-icon">${icon}</span>
+            <span class="folder-label">${label}</span>
+            <span class="folder-arrow">▶</span>
         `;
-        header.addEventListener('click', () => selectStage(stage.id));
 
-        const problems = document.createElement('div');
-        problems.className = `stage-problems ${currentStageId === stage.id ? 'open' : ''}`;
+        const body = document.createElement('div');
+        body.className = `folder-content${defaultOpen ? ' open' : ''}`;
+        content(body);
 
-        // Theory link
-        const theoryLink = document.createElement('button');
-        theoryLink.className = 'problem-link';
-        theoryLink.innerHTML = `<span class="problem-status"></span> 📖 Lý thuyết`;
-        theoryLink.addEventListener('click', (e) => {
-            e.stopPropagation();
-            selectStage(stage.id);
-            switchTab('theory');
-        });
-        problems.appendChild(theoryLink);
-
-        stage.problems.forEach(p => {
-            const link = document.createElement('button');
-            const progress = progressData[p.id];
-            const statusClass = progress?.completed ? 'completed' : (progress?.attempts > 0 ? 'attempted' : '');
-            const diffClass = p.difficulty === 'Khởi động' ? 'easy' : (p.difficulty === 'Vận dụng' ? 'medium' : 'hard');
-
-            link.className = `problem-link ${currentProblemId === p.id ? 'active' : ''}`;
-            link.innerHTML = `
-                <span class="problem-status ${statusClass}"></span>
-                <span>${p.title}</span>
-                <span class="difficulty-badge ${diffClass}">${p.difficulty === 'Khởi động' ? '★' : p.difficulty === 'Vận dụng' ? '★★' : '★★★'}</span>
-            `;
-            link.addEventListener('click', (e) => {
-                e.stopPropagation();
-                selectProblem(stage.id, p.id);
-            });
-            problems.appendChild(link);
+        header.addEventListener('click', () => {
+            header.classList.toggle('open');
+            body.classList.toggle('open');
         });
 
         group.appendChild(header);
-        group.appendChild(problems);
+        group.appendChild(body);
         container.appendChild(group);
+    }
+
+    // ---- Folder 1: Ôn Học Sinh Giỏi (mặc định mở) ----
+    makeFolder({
+        icon: '🏆',
+        label: 'Ôn Học Sinh Giỏi',
+        defaultOpen: true,
+        content(body) {
+            stagesData.forEach(stage => {
+                const group = document.createElement('div');
+                group.className = 'stage-group';
+
+                const completedCount = stage.problems.filter(p =>
+                    progressData[p.id]?.completed
+                ).length;
+                const totalCount = stage.problems.length;
+
+                const header = document.createElement('button');
+                header.className = `stage-header ${currentStageId === stage.id ? 'active' : ''}`;
+                header.innerHTML = `
+                    <span class="stage-icon">${stage.icon}</span>
+                    <span class="stage-title">${stage.title}</span>
+                    <span class="stage-progress">${completedCount}/${totalCount}</span>
+                `;
+                header.addEventListener('click', () => selectStage(stage.id));
+
+                const problems = document.createElement('div');
+                problems.className = `stage-problems ${currentStageId === stage.id ? 'open' : ''}`;
+
+                const theoryLink = document.createElement('button');
+                theoryLink.className = 'problem-link';
+                theoryLink.innerHTML = `<span class="problem-status"></span> 📖 Lý thuyết`;
+                theoryLink.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectStage(stage.id);
+                    switchTab('theory');
+                });
+                problems.appendChild(theoryLink);
+
+                stage.problems.forEach(p => {
+                    const link = document.createElement('button');
+                    const progress = progressData[p.id];
+                    const statusClass = progress?.completed ? 'completed' : (progress?.attempts > 0 ? 'attempted' : '');
+                    const diffClass = p.difficulty === 'Khởi động' ? 'easy' : (p.difficulty === 'Vận dụng' ? 'medium' : 'hard');
+
+                    link.className = `problem-link ${currentProblemId === p.id ? 'active' : ''}`;
+                    link.innerHTML = `
+                        <span class="problem-status ${statusClass}"></span>
+                        <span>${p.title}</span>
+                        <span class="difficulty-badge ${diffClass}">${p.difficulty === 'Khởi động' ? '★' : p.difficulty === 'Vận dụng' ? '★★' : '★★★'}</span>
+                    `;
+                    link.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectProblem(stage.id, p.id);
+                    });
+                    problems.appendChild(link);
+                });
+
+                group.appendChild(header);
+                group.appendChild(problems);
+                body.appendChild(group);
+            });
+        }
+    });
+
+    // ---- Folder 2: Ôn TN THPT QGia (placeholder) ----
+    makeFolder({
+        icon: '📝',
+        label: 'Ôn TN THPT QGia',
+        defaultOpen: false,
+        content(body) {
+            body.innerHTML = `<div class="folder-placeholder">📂 Chưa có bài — Thêm bài tập tại đây</div>`;
+        }
+    });
+
+    // ---- Folder 3: Luyện Đề (placeholder) ----
+    makeFolder({
+        icon: '📋',
+        label: 'Luyện Đề',
+        defaultOpen: false,
+        content(body) {
+            body.innerHTML = `<div class="folder-placeholder">📂 Chưa có đề — Thêm đề thi tại đây</div>`;
+        }
+    });
+
+    // ---- Folder 4: BTap GV giao (placeholder) ----
+    makeFolder({
+        icon: '✏️',
+        label: 'BTap GV giao',
+        defaultOpen: false,
+        content(body) {
+            body.innerHTML = `<div class="folder-placeholder">📂 Chưa có bài — GV thêm bài tại đây</div>`;
+        }
     });
 }
+
 
 // ============================================================================
 // STAGE & PROBLEM SELECTION
