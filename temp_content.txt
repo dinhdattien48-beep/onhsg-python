@@ -1,0 +1,80 @@
+CHUYÊN ĐỀ CHUYÊN SÂU: CƠ SỞ DỮ LIỆU (CSDL)
+ÔN THI TỐT NGHIỆP THPT QG MÔN TIN HỌC
+Tài liệu hệ thống lý thuyết cốt lõi, chi tiết và mở rộng bám sát cấu trúc đề thi từ năm 2025
+
+PHẦN 1: TỔNG QUAN VỀ CƠ SỞ DỮ LIỆU VÀ MÔ HÌNH QUAN HỆ
+1. Khái niệm cơ bản
+Định nghĩa CSDL: Cơ sở dữ liệu (Database - viết tắt là CSDL) là tập hợp dữ liệu có liên quan với nhau, được lưu trữ có tổ chức trên các thiết bị lưu trữ (như ổ cứng máy tính) nhằm đáp ứng nhu cầu khai thác, tìm kiếm, cập nhật và xử lý thông tin của nhiều người dùng hoặc nhiều chương trình ứng dụng khác nhau.
+Tính liên quan: Các dữ liệu trong CSDL được dùng chung, có sự liên kết chặt chẽ với nhau theo ngữ nghĩa thực tế (Ví dụ: Bảng HọcSinh và bảng Lớp liên quan với nhau qua mã lớp để biết học sinh nào học lớp nào).
+Tính có tổ chức: Dữ liệu được tổ chức thành các cấu trúc rõ ràng (thường là các bảng gồm hàng và cột) giúp việc quản lý, truy xuất và cập nhật trở nên nhanh chóng, chính xác.
+2. Mô hình dữ liệu quan hệ (Relational Data Model)
+Khái niệm quan hệ: Mô hình dữ liệu quan hệ là mô hình biểu diễn CSDL dưới dạng các bảng (table), trong đó mỗi bảng biểu diễn một mối quan hệ (relation) giữa các đối tượng.
+Hàng (Bộ / Record): Mỗi hàng trong bảng được gọi là một bộ (tuple) hay một bản ghi (record), tương ứng với thông tin của một cá thể cụ thể.
+Cột (Thuộc tính / Field): Mỗi cột trong bảng được gọi là một thuộc tính (attribute) hay một trường (field), biểu diễn một đặc trưng của đối tượng.
+Tính chất của quan hệ: Các tính chất quan trọng của quan hệ (bảng):
+- Hai hàng bất kỳ trong quan hệ phải phân biệt nhau (không được có hai hàng giống hệt nhau ở tất cả các thuộc tính).
+- Thứ tự các cột trong bảng không quan trọng (có thể hoán đổi vị trí các cột mà không thay đổi ý nghĩa dữ liệu).
+- Thứ tự các hàng trong bảng không quan trọng (có thể sắp xếp lại các hàng tùy ý).
+PHẦN 2: HỆ THỐNG KHÓA VÀ CÁC LOẠI RÀNG BUỘC TOÀN VẸN
+1. Khái niệm Khóa trong quan hệ
+Khóa (Key): Khóa của quan hệ (Relation key) là tập hợp gồm một hoặc nhiều thuộc tính mà giá trị của tập thuộc tính này xác định duy nhất một bộ (bản ghi) trong quan hệ, đồng thời không tồn tại tập con thực sự nào của nó có tính chất đó.
+Khóa dự tuyển: Khóa dự tuyển (Candidate Key): Là tập hợp các thuộc tính có tính chất xác định duy nhất một bản ghi. Một quan hệ có thể có một hoặc nhiều khóa dự tuyển.
+Khóa chính: Khóa chính (Primary Key): Là khóa tiêu biểu được người thiết kế CSDL lựa chọn trong số các khóa dự tuyển để định danh các bản ghi trong bảng. Lưu ý: Một quan hệ chỉ có duy nhất một khóa chính; giá trị khóa chính KHÔNG ĐƯỢC trùng lặp và KHÔNG ĐƯỢC có giá trị NULL (rỗng); nên ưu tiên chọn khóa đơn (1 thuộc tính).
+Khóa phụ: Khóa luân phiên / Khóa phụ (Alternate Key / Secondary Key): Là các khóa dự tuyển còn lại không được chọn làm khóa chính.
+Khóa ngoài: Khóa ngoài (Foreign Key): Là một hoặc nhiều thuộc tính của bảng này nhưng là khóa chính của bảng khác. Khóa ngoài dùng để thiết lập mối liên kết 'khoá chính - khoá ngoài' giữa các bảng. Lưu ý: Khóa ngoài có thể nhận giá trị NULL, không duy nhất (nhiều bản ghi có thể cùng giá trị khóa ngoài).
+2. Các loại Ràng buộc toàn vẹn (Constraints)
+1. Ràng buộc khóa: Ràng buộc khóa (Key Constraint): Bảo đảm giá trị của khóa chính không được trùng lặp giữa các bản ghi và không được chứa giá trị NULL. Khi thêm mới hoặc sửa dữ liệu khóa, hệ quản trị CSDL phải kiểm tra xem giá trị đó đã tồn tại hay chưa.
+2. Ràng buộc tham chiếu: Ràng buộc tham chiếu / Ràng buộc khóa ngoài (Referential Constraint): Xét bảng cha Q có khóa chính PK và bảng con R có khóa ngoài FK tham chiếu tới PK. Quy tắc: Giá trị của trường khóa ngoài FK ở bảng con phải tồn tại trong trường khóa chính PK của bảng cha (hoặc có thể bằng NULL nếu được phép).
+- Bảng cha: Kiểm tra khi cập nhật bảng cha (Sửa/Xóa): Khi sửa giá trị khóa k thành p ở bảng cha, hoặc xóa bản ghi có khóa k, hệ thống phải đảm bảo giá trị k không đang được tham chiếu bởi khóa ngoài FK ở bảng con (trừ khi thiết lập cơ chế tự động lan truyền cascade).
+- Bảng con: Kiểm tra khi cập nhật bảng con (Thêm/Sửa): Khi thêm bản ghi mới hoặc sửa giá trị khóa ngoài thành k ở bảng con, hệ thống bắt buộc phải kiểm tra xem giá trị k có thực sự tồn tại trong khóa chính PK của bảng cha hay không.
+PHẦN 3: NGÔN NGỮ TRUY VẤN SQL (STRUCTURED QUERY LANGUAGE)
+1. Phân loại các câu lệnh SQL
+1. DQL: DQL (Data Query Language): Ngôn ngữ truy vấn dữ liệu. Lệnh tiêu biểu: SELECT (dùng để khai thác, tìm kiếm dữ liệu).
+2. DML: DML (Data Manipulation Language): Ngôn ngữ thao tác dữ liệu. Các lệnh tiêu biểu: INSERT (thêm dữ liệu), UPDATE (sửa dữ liệu), DELETE (xóa dữ liệu).
+3. DDL: DDL (Data Definition Language): Ngôn ngữ định nghĩa dữ liệu. Các lệnh tiêu biểu: CREATE TABLE (tạo bảng), ALTER TABLE (thay đổi cấu trúc), DROP TABLE (xóa bảng).
+4. DCL: DCL (Data Control Language): Ngôn ngữ điều khiển dữ liệu. Các lệnh tiêu biểu: GRANT (cấp quyền), REVOKE (thu hồi quyền).
+2. Cấu trúc chi tiết lệnh SELECT (Truy vấn dữ liệu)
+Cú pháp SQL: Cú pháp tổng quát:
+-> SELECT [DISTINCT] danh_sach_cot
+FROM danh_sach_bang
+[JOIN b_lien_ket ON dieu_kien_noi]
+[WHERE dieu_kien_chon]
+[GROUP BY danh_sach_cot_nhom]
+[HAVING dieu_kien_nhom]
+[ORDER BY cot_sap_xep [ASC | DESC]];
+Chi tiết mệnh đề: Giải thích các mệnh đề:
+- SELECT: Chỉ định các cột (hoặc biểu thức, hàm) cần hiển thị trong kết quả truy vấn.
+- FROM: Chỉ định các bảng dữ liệu nguồn tham gia truy vấn.
+- WHERE: Đặt điều kiện lọc các hàng (bản ghi) thỏa mãn trước khi gom nhóm hoặc hiển thị.
+- ORDER BY: Sắp xếp kết quả trả về theo các cột chỉ định (ASC: tăng dần - mặc định; DESC: giảm dần).
+- GROUP BY: Gom nhóm các bản ghi có chung giá trị để thực hiện tính toán thống kê.
+- HAVING: Lọc các nhóm sau khi đã gom nhóm bằng GROUP BY (điều kiện trên hàm tổng hợp).
+3. Các hàm tổng hợp và Phép toán thường gặp trong SQL
+Hàm SUM: SUM(cột): Tính tổng giá trị số của cột.
+Hàm COUNT: COUNT(cột / *): Đếm số lượng bản ghi.
+Hàm AVG: AVG(cột): Tính giá trị trung bình.
+Hàm MAX/MIN: MAX(cột) / MIN(cột): Tìm giá trị lớn nhất / nhỏ nhất.
+Toán tử logic: Toán tử so sánh: =, <>, >, <, >=, <=, AND, OR, NOT.
+Toán tử đặc biệt: Toán tử đặc biệt: IN (danh_sach), BETWEEN min AND max, LIKE ('chuoi_mau').
+Phép nối JOIN: Phép nối bảng INNER JOIN: Kết hợp các bản ghi từ hai bảng khi có giá trị khớp nhau ở cột liên kết (Khớp khóa chính - khóa ngoài).
+PHẦN 4: HỆ QUẢN TRỊ CSDL VÀ KIẾN TRÚC HỆ CSDL
+1. Hệ quản trị CSDL (DBMS - Database Management System)
+Khái niệm DBMS: Là hệ thống phần mềm cung cấp giao diện và các công cụ để người dùng và chương trình ứng dụng định nghĩa, tạo lập, cập nhật, khai thác, bảo đảm an toàn, toàn vẹn và bảo mật CSDL.
+Ví dụ phần mềm: Các phần mềm DBMS phổ biến hiện nay: Microsoft Access, MySQL, PostgreSQL, Microsoft SQL Server, Oracle, SQLite, MongoDB.
+2. Hệ CSDL (Database System)
+Thành phần hệ CSDL: Hệ CSDL bao gồm 3 thành phần chính: CSDL + Hệ quản trị CSDL (DBMS) + Các chương trình ứng dụng tương tác với CSDL.
+CSDL tập trung: CSDL tập trung (Centralized Database): Toàn bộ CSDL được lưu trữ và quản lý tập trung trên một máy tính duy nhất.
+CSDL phân tán: CSDL phân tán (Distributed Database): Tập hợp dữ liệu được phân tán lưu trữ tại nhiều trạm (site) khác nhau kết nối qua mạng máy tính. Mỗi trạm có CSDL cục bộ (local database) riêng.
+- Ứng dụng cục bộ (Local Application): Chạy tại một trạm và chỉ sử dụng dữ liệu cục bộ của trạm đó.
+- Ứng dụng toàn cục (Global Application): Chạy tại một trạm nhưng sử dụng dữ liệu của từ hai trạm trở lên trong hệ thống phân tán.
+PHẦN 5: BẢO MẬT VÀ AN TOÀN CƠ SỞ DỮ LIỆU
+1. Bảo mật CSDL (Database Security)
+Khái niệm bảo mật: Bảo mật CSDL là bảo vệ dữ liệu khỏi các mối đe dọa vô tình hoặc cố ý làm lộ lọt thông tin, đánh cắp dữ liệu hoặc thay đổi trái phép tính toàn vẹn của dữ liệu.
+- Kiểm soát truy cập: Xác thực người dùng (Authentication - kiểm tra danh tính bằng tên đăng nhập, mật khẩu, sinh trắc học) và phân quyền (Authorization - cấp quyền đọc, sửa, xóa, thêm trên các bảng/cột cụ thể).
+- Mã hóa dữ liệu (Encryption): Mã hóa dữ liệu khi lưu trữ trên ổ cứng và khi truyền tải trên mạng để tránh bị đọc trộm.
+- Đảm bảo tính toàn vẹn: Sử dụng chữ ký số và cơ chế kiểm tra tính hợp lệ của dữ liệu.
+- Ghi nhật ký (Logging): Ghi lại lịch sử hoạt động của người dùng (đăng nhập, thời gian, thao tác thêm/sửa/xóa) để phục vụ kiểm tra khi có sự cố.
+- Cập nhật bản vá bảo mật: Thường xuyên cập nhật hệ quản trị CSDL để bịt các lỗ hổng bảo mật mới phát sinh.
+2. An toàn CSDL (Database Safety)
+Khái niệm an toàn: An toàn CSDL là bảo vệ dữ liệu khỏi bị mất mát hoặc phá hủy do các nguyên nhân khách quan như sự cố phần cứng, hỏng ổ đĩa, mất nguồn điện đột ngột, hỏa hoạn, lỗi phần mềm hoặc sơ suất của con người.
+Giải pháp chính: Sao lưu và phục hồi (Backup and Recovery): Thực hiện sao lưu định kỳ CSDL ra các thiết bị lưu trữ ngoài hoặc đám mây. Khi xảy ra sự cố mất dữ liệu, sử dụng bản sao lưu gần nhất kết hợp tệp nhật ký giao dịch để khôi phục lại trạng thái an toàn.
