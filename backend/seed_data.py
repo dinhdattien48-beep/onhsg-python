@@ -326,13 +326,6 @@ Cho $N$ số nguyên. Hãy tính tổng của chúng.
 ### Gợi ý
 ⚠️ Với $N$ lên đến $10^6$, em cần dùng `sys.stdin.readline` để tăng tốc đọc dữ liệu, và hàm `sum()` (chạy ở tầng C) thay vì vòng lặp Python thủ công.
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -639,13 +632,6 @@ Cho ba số nguyên $a$, $b$, $m$. Hãy tính $a^b \mod m$.
 ### ⚠️ Cảnh báo
 $b$ có thể lên tới $10^{18}$! Nếu em dùng vòng lặp nhân lặp $O(b)$ lần, chương trình sẽ **chạy mãi không xong**. Hãy nhớ Vũ Khí Python: `pow(a, b, m)` chạy trong $O(\log b)$!
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -962,13 +948,6 @@ Cho số nguyên không âm $N$. Tính tổng $S = 1 + 2 + 3 + \ldots + N$.
 ### ⚠️ Cảnh báo
 $N$ lên tới $10^{18}$! Vòng lặp sẽ chạy mãi không xong. Em **bắt buộc** phải dùng công thức toán học $S = \dfrac{N(N+1)}{2}$ để giải trong $O(1)$.
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -1294,13 +1273,6 @@ Cho một đoạn văn bản. Đếm số từ trong đoạn văn bản đó. C�
 ### Gợi ý
 Phương thức `.split()` (không đối số) tự động bỏ qua dấu cách thừa và trả về danh sách các từ. Đếm bằng `len()`.
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -1606,13 +1578,6 @@ Cho mảng $N$ số nguyên. Đếm số lượng giá trị **phân biệt** (k
 ### Gợi ý
 Chuyển list thành set sẽ tự loại bỏ trùng, rồi đếm bằng `len()` → $O(N)$. Cách dùng 2 vòng lặp lồng nhau sẽ là $O(N^2)$ → TLE!
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -1937,13 +1902,6 @@ Cho hai số nguyên dương $L$ và $R$. Đếm số lượng số nguyên tố
 ### Gợi ý
 Với $R$ lên tới $5 \times 10^6$, kiểm tra từng số một sẽ chậm. Dùng **Sàng Eratosthenes** để tìm tất cả số nguyên tố đến $R$ trong $O(R \log \log R)$.
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -2231,13 +2189,6 @@ Cho mảng $N$ số nguyên và một số $X$. Đếm số lần $X$ xuất hi�
 ### Gợi ý
 Sắp xếp mảng rồi dùng `bisect_left` và `bisect_right` → $O(N \log N)$ sắp xếp + $O(\log N)$ đếm.
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -2615,13 +2566,6 @@ Dãy Fibonacci: $F(0) = 0, F(1) = 1, F(n) = F(n-1) + F(n-2)$.
 ### Gợi ý
 Dùng đệ quy có nhớ `@lru_cache(None)` hoặc vòng lặp bottom-up. Nhớ tăng giới hạn đệ quy bằng `sys.setrecursionlimit()` nếu dùng đệ quy!
 """,
-    {
-        "id": 9,
-        "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
-        "icon": "🎓",
-        "theory": STAGE_9_THEORY,
-        "weapon": STAGE_9_WEAPON,
-        "problems": STAGE_9_PROBLEMS,
     },
 ]
 
@@ -2656,7 +2600,6 @@ TEST_GENERATORS = {
     "8_2": _gen_tests_8_2,
     "8_3": _gen_tests_8_3,
 }
-
 
 STAGE_9_THEORY = r"""
 # LỘ TRÌNH ÔN THI TỐT NGHIỆP THPT QUỐC GIA MÔN TIN HỌC
@@ -2722,7 +2665,6 @@ STAGE_9_THEORY = r"""
 
 ---
 *Chúc bạn ôn tập hiệu quả và đạt điểm tuyệt đối môn Tin Học!*
-
 """
 
 STAGE_9_WEAPON = r"""
@@ -2796,6 +2738,7 @@ STAGES = [
         "theory": STAGE_8_THEORY,
         "weapon": STAGE_8_WEAPON,
         "problems": STAGE_8_PROBLEMS,
+    },
     {
         "id": 9,
         "title": "Ôn thi Tốt nghiệp THPT QG - CSDL",
