@@ -159,6 +159,16 @@ async def list_stages():
     return {"stages": result}
 
 
+@app.get("/api/thpt")
+async def get_thpt_theory():
+    """Lấy nội dung lý thuyết Ôn TN THPT QGia."""
+    md_path = os.path.join(os.path.dirname(BACKEND_DIR), "Ôn TN THPT QGia", "LyThuyet_Full.md")
+    if os.path.exists(md_path):
+        with open(md_path, 'r', encoding='utf-8') as f:
+            return {"theory": f.read()}
+    return {"theory": "# Nội dung đang được cập nhật..."}
+
+
 @app.get("/api/stages/{stage_id}")
 async def get_stage_detail(stage_id: int):
     """Lấy chi tiết một chặng (lý thuyết + vũ khí + danh sách bài tập)."""

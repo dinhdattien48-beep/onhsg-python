@@ -38,7 +38,10 @@
         <div class="header-center">
             <nav class="header-nav">
                 <button class="nav-btn active" data-view="learn" id="nav-learn">
-                    <span class="nav-icon">📚</span> Học tập
+                    <span class="nav-icon">📚</span> Ôn HSG
+                </button>
+                <button class="nav-btn" data-view="thpt" id="nav-thpt">
+                    <span class="nav-icon">🎓</span> Ôn TN THPT QGia
                 </button>
                 <button class="nav-btn" data-view="roadmap" id="nav-roadmap">
                     <span class="nav-icon">🗺️</span> Lộ trình
@@ -177,6 +180,13 @@
     <div class="roadmap-view hidden" id="roadmap-view">
         <div class="roadmap-container" id="roadmap-container">
             <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- ===== THPT VIEW ===== -->
+    <div class="thpt-view hidden" id="thpt-view" style="padding: 30px 20px; max-width: 1100px; margin: 0 auto; color: #fff;">
+        <div id="thpt-content" class="content-section" style="background: #1e1e2e; border: 1px solid #333; border-radius: 12px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="text-align: center; color: #a6adc8;">Đang tải dữ liệu...</div>
         </div>
     </div>
 

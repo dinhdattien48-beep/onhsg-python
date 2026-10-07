@@ -303,14 +303,35 @@ function switchView(view) {
     // Toggle views
     const main = document.getElementById('app-main');
     const roadmap = document.getElementById('roadmap-view');
+    const thptView = document.getElementById('thpt-view');
 
     if (view === 'learn') {
         main.style.display = 'flex';
         roadmap.classList.add('hidden');
+        if (thptView) thptView.classList.add('hidden');
     } else if (view === 'roadmap') {
         main.style.display = 'none';
         roadmap.classList.remove('hidden');
+        if (thptView) thptView.classList.add('hidden');
         renderRoadmap();
+    } else if (view === 'thpt') {
+        main.style.display = 'none';
+        roadmap.classList.add('hidden');
+        if (thptView) {
+            thptView.classList.remove('hidden');
+            loadTHPTContent();
+        }
+    }
+}
+
+async function loadTHPTContent() {
+    try {
+        const data = await apiGet('/api/thpt');
+        const thptHtml = renderMarkdown(data.theory);
+        document.getElementById('thpt-content').innerHTML = thptHtml;
+        renderMath(document.getElementById('thpt-content'));
+    } catch (e) {
+        document.getElementById('thpt-content').innerHTML = `<div style="color:red; text-align:center;">Lỗi tải dữ liệu: ${e.message}</div>`;
     }
 }
 
