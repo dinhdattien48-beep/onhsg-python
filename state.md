@@ -1,3 +1,3 @@
-- **Đã hoàn thành:** Tách phần ôn tập THPT QGia thành 5 chuyên đề chuyên sâu (Mạng, AI, CSDL, HTML/CSS, Bảo mật). Mỗi chuyên đề được biên soạn rất kỹ lưỡng với hàng loạt "bẫy" trắc nghiệm. Cập nhật Sidebar hiển thị 5 danh mục con, load dữ liệu độc lập.
-- **Đang làm dở:** Không có.
-- **Bước tiếp theo:** Chờ người dùng load lại trang (Ctrl + F5 hoặc Shift + F5) để đánh bay cache trình duyệt và trải nghiệm 5 chuyên đề mới.
+- **Đã hoàn thành:** Bổ sung 5 chuyên đề của Ôn TN THPT QGia vào màn hình "Lộ trình". Cập nhật chuyên đề 4 (HTML & CSS) thành bài học thực hành thực tế: xây dựng 1 trang cá nhân cơ bản từ con số 0, kèm theo lý thuyết cấu trúc HTML5 và CSS Box Model.
+- **Đang làm dở:** Không.
+- **Bước tiếp theo:** Người dùng F5 tải lại trang để trải nghiệm.

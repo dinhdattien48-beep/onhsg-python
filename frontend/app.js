@@ -1065,7 +1065,26 @@ function renderRoadmap() {
         label: 'Ôn TN THPT QGia',
         defaultOpen: false,
         content(body) {
-            body.innerHTML = `<div class="roadmap-placeholder">📂 Chưa có nội dung — Sẽ cập nhật sau</div>`;
+            const topics = [
+                { id: "1", title: "Mạng máy tính và Internet" },
+                { id: "2", title: "Trí tuệ nhân tạo (AI) và Học máy" },
+                { id: "3", title: "Cơ sở dữ liệu (CSDL) và SQL" },
+                { id: "4", title: "HTML và CSS căn bản" },
+                { id: "5", title: "Bảo mật, an toàn hệ thống và khắc phục sự cố" }
+            ];
+            
+            topics.forEach(topic => {
+                const stageEl = document.createElement('div');
+                stageEl.className = 'roadmap-stage';
+                stageEl.innerHTML = `
+                    <div class="stage-number">${topic.id}</div>
+                    <div class="stage-card" onclick="goToTHPTTheory('${topic.id}')">
+                        <div class="stage-card-title">📖 Chuyên đề ${topic.id}: ${topic.title}</div>
+                        <div class="stage-card-desc">Lý thuyết trọng tâm & bẫy trắc nghiệm</div>
+                    </div>
+                `;
+                body.appendChild(stageEl);
+            });
         }
     });
 
@@ -1093,6 +1112,11 @@ function renderRoadmap() {
 function goToStage(stageId) {
     switchView('learn');
     selectStage(stageId);
+}
+
+function goToTHPTTheory(topicId) {
+    switchView('learn');
+    selectTHPTTheory(topicId);
 }
 
 // ============================================================================
@@ -1330,9 +1354,10 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Make toggleTestDetail globally accessible
+// Make functions globally accessible
 window.toggleTestDetail = toggleTestDetail;
 window.goToStage = goToStage;
+window.goToTHPTTheory = goToTHPTTheory;
 
 // ============================================================================
 // EDITOR PANEL — COLLAPSE / EXPAND & DRAG RESIZE

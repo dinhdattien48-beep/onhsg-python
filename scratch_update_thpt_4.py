@@ -1,4 +1,9 @@
-# CHUYÊN ĐỀ 4: HTML VÀ CSS CĂN BẢN (NÂNG CAO & THỰC HÀNH)
+import os
+
+folder = r'C:\Users\TDat\Desktop\KHKT\Onhsg\Ôn TN THPT QGia\ChuyenDe'
+os.makedirs(folder, exist_ok=True)
+
+content_4 = r"""# CHUYÊN ĐỀ 4: HTML VÀ CSS CĂN BẢN (NÂNG CAO & THỰC HÀNH)
 *(Cập nhật theo định hướng đề thi THPT QG 2025)*
 
 *Chú giải:*
@@ -173,3 +178,9 @@ Mục này cung cấp mẫu code để bạn copy/paste vào phần Code Editor 
 1. **Bộ chọn Class (`.container`, `.btn`)**: Trong CSS, dấu chấm `.` đứng đầu biểu thị cho `class`. Nếu là dấu `#` đứng đầu thì biểu thị cho `id`. Thẻ HTML nào có thuộc tính `class="btn"` sẽ nhận toàn bộ style của bộ chọn `.btn`.
 2. **Kỹ thuật căn giữa khối (`margin: auto;`)**: Là bí kíp kinh điển. Khi một khối `div` được cung cấp độ rộng cụ thể (`width: 80%`), việc thêm `margin: auto;` sẽ yêu cầu trình duyệt tự động chia đều khoảng cách lề thừa ra 2 bên trái/phải, làm khối lập tức nằm giữa màn hình.
 3. **Màu sắc trong CSS**: Đề thi có thể hỏi về các mã màu. `#f4f4f9` là mã màu Hệ Thập lục phân (Hex), `rgba(0,0,0,0.1)` là hệ màu đỏ-xanhlá-xanhdương kèm độ trong suốt `a` (alpha).
+"""
+
+with open(os.path.join(folder, '4_HTML_CSS.md'), 'w', encoding='utf-8') as f:
+    f.write(content_4)
+
+print("Đã cập nhật chuyên đề 4 thành công")
