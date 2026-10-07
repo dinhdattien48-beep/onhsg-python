@@ -458,14 +458,24 @@ function renderSidebar() {
         label: 'Ôn TN THPT QGia',
         defaultOpen: false,
         content(body) {
-            const link = document.createElement('button');
-            link.className = `problem-link`;
-            link.innerHTML = `<span class="problem-status"></span> 📖 Lý thuyết Trọng tâm`;
-            link.addEventListener('click', (e) => {
-                e.stopPropagation();
-                selectTHPTTheory();
+            const topics = [
+                { id: "1", title: "1. Mạng máy tính" },
+                { id: "2", title: "2. Trí tuệ nhân tạo (AI)" },
+                { id: "3", title: "3. Cơ sở dữ liệu (CSDL)" },
+                { id: "4", title: "4. HTML & CSS" },
+                { id: "5", title: "5. Bảo mật & An toàn" }
+            ];
+            
+            topics.forEach(topic => {
+                const link = document.createElement('button');
+                link.className = `problem-link`;
+                link.innerHTML = `<span class="problem-status"></span> 📖 ${topic.title}`;
+                link.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectTHPTTheory(topic.id);
+                });
+                body.appendChild(link);
             });
-            body.appendChild(link);
         }
     });
 
@@ -495,8 +505,8 @@ function renderSidebar() {
 // STAGE & PROBLEM SELECTION
 // ============================================================================
 
-async function selectTHPTTheory() {
-    currentStageId = 'thpt';
+async function selectTHPTTheory(topicId) {
+    currentStageId = 'thpt_' + topicId;
     currentProblemId = null;
 
     document.getElementById('welcome-screen').classList.add('hidden');
@@ -511,7 +521,7 @@ async function selectTHPTTheory() {
     });
 
     try {
-        const data = await apiGet('/api/thpt');
+        const data = await apiGet(`/api/thpt/${topicId}`);
         const thptHtml = renderMarkdown(data.theory);
         document.getElementById('theory-content').innerHTML = thptHtml;
         renderMath(document.getElementById('theory-content'));

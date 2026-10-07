@@ -159,14 +159,27 @@ async def list_stages():
     return {"stages": result}
 
 
-@app.get("/api/thpt")
-async def get_thpt_theory():
-    """Lấy nội dung lý thuyết Ôn TN THPT QGia."""
-    md_path = os.path.join(os.path.dirname(BACKEND_DIR), "Ôn TN THPT QGia", "LyThuyet_Full.md")
+@app.get("/api/thpt/{topic_id}")
+async def get_thpt_theory(topic_id: str):
+    """Lấy nội dung lý thuyết Ôn TN THPT QGia theo từng chuyên đề."""
+    # Danh sách các file tương ứng với ID
+    file_map = {
+        "1": "1_MangMayTinh.md",
+        "2": "2_TriTueNhanTao.md",
+        "3": "3_CoSoDuLieu.md",
+        "4": "4_HTML_CSS.md",
+        "5": "5_BaoMatAnToan.md"
+    }
+    
+    filename = file_map.get(topic_id)
+    if not filename:
+        return {"theory": "# Không tìm thấy chuyên đề này!"}
+        
+    md_path = os.path.join(os.path.dirname(BACKEND_DIR), "Ôn TN THPT QGia", "ChuyenDe", filename)
     if os.path.exists(md_path):
         with open(md_path, 'r', encoding='utf-8') as f:
             return {"theory": f.read()}
-    return {"theory": "# Nội dung đang được cập nhật..."}
+    return {"theory": f"# Đang cập nhật nội dung cho chuyên đề {topic_id}..."}
 
 
 @app.get("/api/stages/{stage_id}")
