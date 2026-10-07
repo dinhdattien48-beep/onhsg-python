@@ -1,3 +1,3 @@
-- **Đã hoàn thành:** Xây dựng xong bộ lý thuyết chi tiết cho Ôn thi Tốt nghiệp THPT QG 2025 (AI, Mạng máy tính, HTML/CSS, CSDL, Bảo mật) với định dạng màu sắc bẫy rõ ràng. Tách riêng "Ôn TN THPT QGia" thành một Tab độc lập trên giao diện Web (gỡ bỏ khỏi phần lộ trình Ôn HSG), load dữ liệu bằng API riêng.
+- **Đã hoàn thành:** Tách phần ôn tập THPT QGia thành 5 chuyên đề chuyên sâu (Mạng, AI, CSDL, HTML/CSS, Bảo mật). Mỗi chuyên đề được biên soạn rất kỹ lưỡng với hàng loạt "bẫy" trắc nghiệm. Cập nhật Sidebar hiển thị 5 danh mục con, load dữ liệu độc lập.
 - **Đang làm dở:** Không có.
-- **Bước tiếp theo:** Chờ người dùng kiểm tra tab "Ôn TN THPT QGia" trên giao diện Web (http://localhost:8000).
+- **Bước tiếp theo:** Chờ người dùng load lại trang (Ctrl + F5 hoặc Shift + F5) để đánh bay cache trình duyệt và trải nghiệm 5 chuyên đề mới.
