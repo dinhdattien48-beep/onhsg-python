@@ -168,7 +168,8 @@ async def get_thpt_theory(topic_id: str):
         "2": "2_TriTueNhanTao.md",
         "3": "3_CoSoDuLieu.md",
         "4": "4_HTML_CSS.md",
-        "5": "5_BaoMatAnToan.md"
+        "5": "5_BaoMatAnToan.md",
+        "3_exercises": "3_CoSoDuLieu_Exercises.md"
     }
     
     filename = file_map.get(topic_id)
@@ -286,24 +287,40 @@ async def run_code(req: RunRequest):
 @app.post("/api/submit")
 async def submit_code(req: SubmitRequest):
     """Nộp bài chấm 10 test cases + AI Mentor nhận xét."""
-    problem = get_problem(req.problem_id)
-    if not problem:
-        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập")
+    
+    if req.problem_id == "thpt_3_sql":
+        problem = {
+            "id": "thpt_3_sql",
+            "stage_id": "thpt_3",
+            "title": "Bài tập truy vấn SQL THPT",
+            "description": "Viết 8 câu lệnh SQL (SELECT) giải quyết 8 yêu cầu truy vấn dữ liệu từ bảng HOC_SINH và DIEM_THI. Hệ thống sẽ dùng AI để đọc hiểu và nhận xét code SQL của em.",
+            "time_limit": 1.0
+        }
+        test_cases = []
+        judge_result = {
+            "score": 10,
+            "total": 10,
+            "results": [{"test": i, "status": "AC", "time_ms": 1} for i in range(1, 11)]
+        }
+    else:
+        problem = get_problem(req.problem_id)
+        if not problem:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bài tập")
 
-    if not req.code.strip():
-        raise HTTPException(status_code=400, detail="Code không được rỗng")
+        if not req.code.strip():
+            raise HTTPException(status_code=400, detail="Code không được rỗng")
 
-    # 1. Sinh 10 test cases
-    test_cases = get_test_cases(req.problem_id)
-    if not test_cases:
-        raise HTTPException(status_code=500, detail="Không sinh được test cases")
+        # 1. Sinh 10 test cases
+        test_cases = get_test_cases(req.problem_id)
+        if not test_cases:
+            raise HTTPException(status_code=500, detail="Không sinh được test cases")
 
-    # 2. Chấm bài
-    judge_result = judge_submission(
-        student_code=req.code,
-        test_cases=test_cases,
-        time_limit=problem.get("time_limit", 1.0)
-    )
+        # 2. Chấm bài
+        judge_result = judge_submission(
+            student_code=req.code,
+            test_cases=test_cases,
+            time_limit=problem.get("time_limit", 1.0)
+        )
 
     # 3. Gọi AI Mentor: luôn gọi bất kể có API key hay không (fallback heuristic bắt buộc)
     ai_feedback = ""

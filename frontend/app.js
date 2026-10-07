@@ -580,6 +580,18 @@ async function selectTHPTTheory(topicId) {
         const thptHtml = renderMarkdown(data.theory);
         document.getElementById('theory-content').innerHTML = thptHtml;
         renderMath(document.getElementById('theory-content'));
+        
+        if (topicId === "3") {
+            currentProblemId = "thpt_3_sql"; // enable submitting
+            const exData = await apiGet(`/api/thpt/3_exercises`);
+            const exHtml = renderMarkdown(exData.theory);
+            document.getElementById('problem-content').innerHTML = `
+                <div style="padding: 0 10px 40px 10px; line-height: 1.6; color: var(--text-color);">
+                    ${exHtml}
+                </div>
+            `;
+            renderMath(document.getElementById('problem-content'));
+        }
     } catch (e) {
         document.getElementById('theory-content').innerHTML = `<div style="color:red; text-align:center;">Lỗi tải dữ liệu: ${e.message}</div>`;
     }
@@ -754,7 +766,18 @@ async function submitCode() {
             model_name: customModel,
         });
 
-        renderTestResults(result);
+        if (currentProblemId === 'thpt_3_sql') {
+            document.getElementById('results-content').innerHTML = `
+                <div class="score-summary perfect" style="text-align: center; padding: 20px;">
+                    <span class="score-number">✅ Hệ thống đã tiếp nhận SQL</span>
+                    <span class="score-label" style="display: block; margin-top: 10px;">AI Mentor đã đọc code và đưa ra nhận xét. Hãy nhấn sang tab <b>AI Mentor</b> để xem nhé!</span>
+                </div>
+            `;
+            // Switch to AI tab automatically for SQL exercises
+            switchTab('ai-feedback');
+        } else {
+            renderTestResults(result);
+        }
 
         // Render AI feedback
         if (result.ai_feedback) {
