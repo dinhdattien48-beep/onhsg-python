@@ -505,6 +505,59 @@ function renderSidebar() {
 // STAGE & PROBLEM SELECTION
 // ============================================================================
 
+function configureEditorForTopic(topicId) {
+    const tabProblem = document.getElementById('tab-problem');
+    const tabAi = document.getElementById('tab-ai');
+    const expandBtn = document.getElementById('editor-expand-btn');
+    const panelRight = document.getElementById('panel-right');
+    
+    const editorTitleText = document.getElementById('editor-title-text');
+    const editorLangBadge = document.getElementById('editor-lang-badge');
+    const runBtn = document.getElementById('run-code');
+    const debugBtn = document.getElementById('debug-code');
+
+    // Reset everything to default first
+    if (tabProblem) tabProblem.style.display = '';
+    if (tabAi) tabAi.style.display = '';
+    if (expandBtn) {
+        expandBtn.style.display = '';
+        expandBtn.innerHTML = '▶ Code';
+    }
+    if (editorTitleText) editorTitleText.innerText = 'Code Editor';
+    if (editorLangBadge) editorLangBadge.style.display = '';
+    if (runBtn) runBtn.style.display = '';
+    if (debugBtn) debugBtn.style.display = '';
+
+    const defaultPyCode = '# Viết code Python ở đây\nimport sys\ninput = sys.stdin.readline\n\n';
+
+    if (topicId === "3") {
+        if (expandBtn) expandBtn.innerHTML = '▲ Làm Bài';
+        if (editorTitleText) editorTitleText.innerText = 'Làm Bài';
+        if (editorLangBadge) editorLangBadge.style.display = 'none';
+        if (runBtn) runBtn.style.display = 'none';
+        if (debugBtn) debugBtn.style.display = 'none';
+        if (editor && editor.getValue().trim() === defaultPyCode.trim()) {
+            editor.setValue('');
+        }
+    } else if (topicId === "4") {
+        // Keeps defaults for HTML/CSS
+    } else if (topicId) { // topicId is 1, 2, 5
+        if (tabProblem) tabProblem.style.display = 'none';
+        if (tabAi) tabAi.style.display = 'none';
+        if (expandBtn) expandBtn.style.display = 'none';
+        if (panelRight && !panelRight.classList.contains('collapsed')) {
+            const toggleBtn = document.getElementById('toggle-editor-panel');
+            if (toggleBtn) toggleBtn.click();
+        }
+    }
+
+    if (!topicId || topicId === "4") {
+         if (editor && editor.getValue().trim() === '') {
+             editor.setValue(defaultPyCode);
+         }
+    }
+}
+
 async function selectTHPTTheory(topicId) {
     currentStageId = 'thpt_' + topicId;
     currentProblemId = null;
@@ -520,27 +573,7 @@ async function selectTHPTTheory(topicId) {
         btn.classList.toggle('active', btn.dataset.tab === 'theory');
     });
 
-    // Hide or show tabs based on topic 4
-    const tabProblem = document.getElementById('tab-problem');
-    const tabAi = document.getElementById('tab-ai');
-    const expandBtn = document.getElementById('editor-expand-btn');
-    const panelRight = document.getElementById('panel-right');
-
-    if (topicId === "4") {
-        if (tabProblem) tabProblem.style.display = '';
-        if (tabAi) tabAi.style.display = '';
-        if (expandBtn) expandBtn.style.display = '';
-    } else {
-        if (tabProblem) tabProblem.style.display = 'none';
-        if (tabAi) tabAi.style.display = 'none';
-        if (expandBtn) expandBtn.style.display = 'none';
-        
-        // Force close editor panel if it is open
-        if (panelRight && !panelRight.classList.contains('collapsed')) {
-            const toggleBtn = document.getElementById('toggle-editor-panel');
-            if (toggleBtn) toggleBtn.click();
-        }
-    }
+    configureEditorForTopic(topicId);
 
     try {
         const data = await apiGet(`/api/thpt/${topicId}`);
@@ -558,13 +591,7 @@ async function selectTHPTTheory(topicId) {
 async function selectStage(stageId) {
     currentStageId = stageId;
 
-    // Restore elements that might have been hidden by THPT topics
-    const tabProblem = document.getElementById('tab-problem');
-    const tabAi = document.getElementById('tab-ai');
-    const expandBtn = document.getElementById('editor-expand-btn');
-    if (tabProblem) tabProblem.style.display = '';
-    if (tabAi) tabAi.style.display = '';
-    if (expandBtn) expandBtn.style.display = '';
+    configureEditorForTopic(null);
 
     // Load stage detail
     const detail = await loadStageDetail(stageId);
@@ -593,13 +620,7 @@ async function selectProblem(stageId, problemId) {
     currentStageId = stageId;
     currentProblemId = problemId;
 
-    // Restore elements that might have been hidden by THPT topics
-    const tabProblem = document.getElementById('tab-problem');
-    const tabAi = document.getElementById('tab-ai');
-    const expandBtn = document.getElementById('editor-expand-btn');
-    if (tabProblem) tabProblem.style.display = '';
-    if (tabAi) tabAi.style.display = '';
-    if (expandBtn) expandBtn.style.display = '';
+    configureEditorForTopic(null);
 
     try {
         localStorage.setItem('hsg_last_stage_id', stageId);
