@@ -520,6 +520,28 @@ async function selectTHPTTheory(topicId) {
         btn.classList.toggle('active', btn.dataset.tab === 'theory');
     });
 
+    // Hide or show tabs based on topic 4
+    const tabProblem = document.getElementById('tab-problem');
+    const tabAi = document.getElementById('tab-ai');
+    const expandBtn = document.getElementById('editor-expand-btn');
+    const panelRight = document.getElementById('panel-right');
+
+    if (topicId === "4") {
+        if (tabProblem) tabProblem.style.display = '';
+        if (tabAi) tabAi.style.display = '';
+        if (expandBtn) expandBtn.style.display = '';
+    } else {
+        if (tabProblem) tabProblem.style.display = 'none';
+        if (tabAi) tabAi.style.display = 'none';
+        if (expandBtn) expandBtn.style.display = 'none';
+        
+        // Force close editor panel if it is open
+        if (panelRight && !panelRight.classList.contains('collapsed')) {
+            const toggleBtn = document.getElementById('toggle-editor-panel');
+            if (toggleBtn) toggleBtn.click();
+        }
+    }
+
     try {
         const data = await apiGet(`/api/thpt/${topicId}`);
         const thptHtml = renderMarkdown(data.theory);
@@ -535,6 +557,14 @@ async function selectTHPTTheory(topicId) {
 
 async function selectStage(stageId) {
     currentStageId = stageId;
+
+    // Restore elements that might have been hidden by THPT topics
+    const tabProblem = document.getElementById('tab-problem');
+    const tabAi = document.getElementById('tab-ai');
+    const expandBtn = document.getElementById('editor-expand-btn');
+    if (tabProblem) tabProblem.style.display = '';
+    if (tabAi) tabAi.style.display = '';
+    if (expandBtn) expandBtn.style.display = '';
 
     // Load stage detail
     const detail = await loadStageDetail(stageId);
@@ -562,6 +592,14 @@ async function selectStage(stageId) {
 async function selectProblem(stageId, problemId) {
     currentStageId = stageId;
     currentProblemId = problemId;
+
+    // Restore elements that might have been hidden by THPT topics
+    const tabProblem = document.getElementById('tab-problem');
+    const tabAi = document.getElementById('tab-ai');
+    const expandBtn = document.getElementById('editor-expand-btn');
+    if (tabProblem) tabProblem.style.display = '';
+    if (tabAi) tabAi.style.display = '';
+    if (expandBtn) expandBtn.style.display = '';
 
     try {
         localStorage.setItem('hsg_last_stage_id', stageId);
