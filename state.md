@@ -1,3 +1,3 @@
-- **Đã hoàn thành:** Bổ sung 5 chuyên đề của Ôn TN THPT QGia vào màn hình "Lộ trình". Cập nhật chuyên đề 4 (HTML & CSS) thành bài học thực hành thực tế: xây dựng 1 trang cá nhân cơ bản từ con số 0, kèm theo lý thuyết cấu trúc HTML5 và CSS Box Model.
+- **Đã hoàn thành:** Chỉnh sửa giao diện "Code Editor" dành riêng cho chuyên đề 3 (Cơ sở dữ liệu) của mục Ôn TN THPT QGia: hiển thị lại 2 tab Đề bài và AI Mentor, đổi nút mở bảng thành "▲ Làm Bài", đổi tiêu đề thành "Làm Bài", ẩn chữ Python, ẩn nút Chạy Thử và Debug, xóa mặc định 3 dòng code Python ban đầu. Tất cả những thay đổi này chỉ áp dụng cho CSDL, khi quay lại HSG mọi thứ sẽ được trả về trạng thái Code Editor Python bình thường.
 - **Đang làm dở:** Không.
-- **Bước tiếp theo:** Người dùng F5 tải lại trang để trải nghiệm.
+- **Bước tiếp theo:** Chờ người dùng kiểm tra.
