@@ -452,13 +452,20 @@ function renderSidebar() {
         }
     });
 
-    // ---- Folder 2: Ôn TN THPT QGia (placeholder) ----
+    // ---- Folder 2: Ôn TN THPT QGia ----
     makeFolder({
         icon: '📝',
         label: 'Ôn TN THPT QGia',
         defaultOpen: false,
         content(body) {
-            body.innerHTML = `<div class="folder-placeholder">📂 Chưa có bài — Thêm bài tập tại đây</div>`;
+            const link = document.createElement('button');
+            link.className = `problem-link`;
+            link.innerHTML = `<span class="problem-status"></span> 📖 Lý thuyết Trọng tâm`;
+            link.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectTHPTTheory();
+            });
+            body.appendChild(link);
         }
     });
 
@@ -487,6 +494,34 @@ function renderSidebar() {
 // ============================================================================
 // STAGE & PROBLEM SELECTION
 // ============================================================================
+
+async function selectTHPTTheory() {
+    currentStageId = 'thpt';
+    currentProblemId = null;
+
+    document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('problem-content').classList.add('hidden');
+    document.getElementById('ai-content').classList.add('hidden');
+    document.getElementById('theory-content').classList.remove('hidden');
+
+    document.getElementById('theory-content').innerHTML = '<div style="text-align: center; color: #a6adc8;">Đang tải dữ liệu...</div>';
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === 'theory');
+    });
+
+    try {
+        const data = await apiGet('/api/thpt');
+        const thptHtml = renderMarkdown(data.theory);
+        document.getElementById('theory-content').innerHTML = thptHtml;
+        renderMath(document.getElementById('theory-content'));
+    } catch (e) {
+        document.getElementById('theory-content').innerHTML = `<div style="color:red; text-align:center;">Lỗi tải dữ liệu: ${e.message}</div>`;
+    }
+    
+    switchView('learn');
+    renderSidebar();
+}
 
 async function selectStage(stageId) {
     currentStageId = stageId;
