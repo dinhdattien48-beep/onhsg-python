@@ -367,6 +367,21 @@ function switchTab(tab) {
     }
 }
 
+const STAGE_PRACTICE_TITLES = {
+    1: "Bài tập về Nhập xuất & Biến cơ bản",
+    2: "Bài tập về Cấu trúc Rẽ nhánh & Toán học",
+    3: "Bài tập về Vòng lặp & Khử vòng lặp",
+    4: "Bài tập về Xử lý Xâu ký tự (String)",
+    5: "Bài tập về Danh sách (List) & Set/Dict",
+    6: "Bài tập về Số học & Thuật toán thi HSG",
+    7: "Bài tập về Sắp xếp & Tìm kiếm nhị phân",
+    8: "Bài tập về Prefix Sum, Hai con trỏ & Đệ quy"
+};
+
+function getPracticeTitle(stageId) {
+    return STAGE_PRACTICE_TITLES[stageId] || `Bài tập Chặng ${stageId}`;
+}
+
 // ============================================================================
 // SIDEBAR RENDERING
 // ============================================================================
@@ -480,7 +495,7 @@ function renderSidebar() {
                         header.className = `stage-header ${isStageActive ? 'active' : ''}`;
                         header.innerHTML = `
                             <span class="stage-icon">${stage.icon}</span>
-                            <span class="stage-title">${stage.title}</span>
+                            <span class="stage-title">${getPracticeTitle(stage.id)}</span>
                             <span class="stage-progress">${completedCount}/${totalCount}</span>
                         `;
 
@@ -1190,7 +1205,7 @@ function renderRoadmap() {
                 stageEl.innerHTML = `
                     <div class="stage-number">${stage.id}</div>
                     <div class="stage-card" onclick="goToStage(${stage.id})">
-                        <div class="stage-card-title">${stage.icon} Chặng ${stage.id}: ${stage.title}</div>
+                        <div class="stage-card-title">${stage.icon} Chặng ${stage.id}: ${getPracticeTitle(stage.id)}</div>
                         <div class="stage-card-desc">${completedCount}/${totalCount} bài hoàn thành</div>
                         <div class="stage-card-problems">${problemTags}</div>
                     </div>
