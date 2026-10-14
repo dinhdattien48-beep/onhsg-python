@@ -388,6 +388,14 @@ function getPracticeTitle(stageId) {
 
 function renderSidebar() {
     const container = document.getElementById('sidebar-stages');
+
+    // Lưu lại trạng thái các folder / subfolder mà người dùng đã tự tay bấm mở
+    const openLabels = new Set();
+    container.querySelectorAll('.folder-header.open, .subfolder-header.open').forEach(el => {
+        const text = el.querySelector('.folder-label, .subfolder-label')?.textContent?.trim();
+        if (text) openLabels.add(text);
+    });
+
     container.innerHTML = '';
 
     // ---- Helper: tạo folder Level-1 ----
@@ -395,8 +403,9 @@ function renderSidebar() {
         const group = document.createElement('div');
         group.className = 'folder-group';
 
+        const isOpen = openLabels.has(label) || defaultOpen;
         const header = document.createElement('button');
-        header.className = `folder-header${defaultOpen ? ' open' : ''}`;
+        header.className = `folder-header${isOpen ? ' open' : ''}`;
         header.innerHTML = `
             <span class="folder-icon">${icon}</span>
             <span class="folder-label">${label}</span>
@@ -404,7 +413,7 @@ function renderSidebar() {
         `;
 
         const body = document.createElement('div');
-        body.className = `folder-content${defaultOpen ? ' open' : ''}`;
+        body.className = `folder-content${isOpen ? ' open' : ''}`;
         content(body);
 
         header.addEventListener('click', () => {
@@ -422,8 +431,9 @@ function renderSidebar() {
         const subGroup = document.createElement('div');
         subGroup.className = 'subfolder-group';
 
+        const isOpen = openLabels.has(label) || defaultOpen;
         const header = document.createElement('button');
-        header.className = `subfolder-header${defaultOpen ? ' open' : ''}`;
+        header.className = `subfolder-header${isOpen ? ' open' : ''}`;
         header.innerHTML = `
             <span class="subfolder-icon">${icon}</span>
             <span class="subfolder-label">${label}</span>
@@ -431,7 +441,7 @@ function renderSidebar() {
         `;
 
         const subBody = document.createElement('div');
-        subBody.className = `subfolder-content${defaultOpen ? ' open' : ''}`;
+        subBody.className = `subfolder-content${isOpen ? ' open' : ''}`;
         content(subBody);
 
         header.addEventListener('click', (e) => {
@@ -451,11 +461,11 @@ function renderSidebar() {
         label: 'Ôn HSG',
         defaultOpen: false,
         content(body) {
-            // Mục nhỏ 1: Lí Thuyết (Gom toàn bộ 8 chặng lý thuyết vào đây)
+            // Mục nhỏ 1: Lí Thuyết (Mặc định ĐÓNG cho đến khi người dùng bấm mở)
             makeSubFolder(body, {
                 icon: '📖',
                 label: 'Lí Thuyết',
-                defaultOpen: true,
+                defaultOpen: false,
                 content(subBody) {
                     stagesData.forEach(stage => {
                         const link = document.createElement('button');
@@ -475,11 +485,11 @@ function renderSidebar() {
                 }
             });
 
-            // Mục nhỏ 2: Bài tập (8 chặng bài tập thực hành & chấm test tự động)
+            // Mục nhỏ 2: Bài tập (Mặc định ĐÓNG cho đến khi người dùng bấm mở)
             makeSubFolder(body, {
                 icon: '📝',
                 label: 'Bài tập',
-                defaultOpen: true,
+                defaultOpen: false,
                 content(subBody) {
                     stagesData.forEach(stage => {
                         const group = document.createElement('div');
@@ -500,7 +510,7 @@ function renderSidebar() {
                         `;
 
                         const problems = document.createElement('div');
-                        problems.className = `stage-problems ${currentStageId === stage.id && currentProblemId ? 'open' : ''}`;
+                        problems.className = 'stage-problems';
 
                         header.addEventListener('click', (e) => {
                             e.stopPropagation();
