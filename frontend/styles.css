@@ -688,6 +688,75 @@ a:hover {
     display: block;
 }
 
+/* ===== SUBFOLDER (Level 2 — Accordion inside Folder) ===== */
+.subfolder-group {
+    margin: 4px 0;
+}
+
+.subfolder-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: none;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    width: 100%;
+    text-align: left;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    border-left: 2px solid transparent;
+}
+
+.subfolder-header:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-left-color: var(--accent-primary);
+}
+
+.subfolder-header.open {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--accent-secondary);
+    border-left-color: var(--accent-primary);
+}
+
+.subfolder-header .subfolder-icon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.subfolder-header .subfolder-label {
+    flex: 1;
+}
+
+.subfolder-arrow {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.subfolder-header.open .subfolder-arrow {
+    transform: rotate(90deg);
+    color: var(--accent-primary);
+}
+
+.subfolder-content {
+    display: none;
+    padding: 2px 0 2px 6px;
+    border-left: 1px dashed var(--border-subtle);
+    margin-left: 8px;
+    animation: expandIn 0.2s ease-out;
+}
+
+.subfolder-content.open {
+    display: block;
+}
+
 .folder-placeholder {
     padding: 10px 12px;
     color: var(--text-muted);
@@ -1635,6 +1704,42 @@ a:hover {
     font-style: italic;
     border: 1px dashed var(--border-subtle);
     border-radius: var(--radius-sm);
+}
+
+/* Roadmap Subsections */
+.roadmap-subsection {
+    margin-bottom: 24px;
+}
+
+.roadmap-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.roadmap-subsection-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+}
+
+.roadmap-subsection-header .rss-icon {
+    font-size: 1.2rem;
+}
+
+.roadmap-subsection-header .rss-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-secondary);
+}
+
+.roadmap-subsection-header .rss-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-left: auto;
 }
 
 

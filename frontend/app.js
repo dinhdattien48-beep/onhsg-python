@@ -402,72 +402,128 @@ function renderSidebar() {
         container.appendChild(group);
     }
 
-    // ---- Folder: Ôn HSG (đóng mặc định) ----
+    // ---- Helper: tạo subfolder Level-2 (Lí Thuyết, Bài tập...) ----
+    function makeSubFolder(parentEl, { icon, label, defaultOpen = false, content }) {
+        const subGroup = document.createElement('div');
+        subGroup.className = 'subfolder-group';
+
+        const header = document.createElement('button');
+        header.className = `subfolder-header${defaultOpen ? ' open' : ''}`;
+        header.innerHTML = `
+            <span class="subfolder-icon">${icon}</span>
+            <span class="subfolder-label">${label}</span>
+            <span class="subfolder-arrow">▶</span>
+        `;
+
+        const subBody = document.createElement('div');
+        subBody.className = `subfolder-content${defaultOpen ? ' open' : ''}`;
+        content(subBody);
+
+        header.addEventListener('click', (e) => {
+            e.stopPropagation();
+            header.classList.toggle('open');
+            subBody.classList.toggle('open');
+        });
+
+        subGroup.appendChild(header);
+        subGroup.appendChild(subBody);
+        parentEl.appendChild(subGroup);
+    }
+
+    // ---- Folder 1: Ôn HSG (đóng mặc định) ----
     makeFolder({
         icon: '🏆',
         label: 'Ôn HSG',
         defaultOpen: false,
         content(body) {
-            stagesData.forEach(stage => {
-                const group = document.createElement('div');
-                group.className = 'stage-group';
-
-                const completedCount = stage.problems.filter(p =>
-                    progressData[p.id]?.completed
-                ).length;
-                const totalCount = stage.problems.length;
-
-                const header = document.createElement('button');
-                header.className = `stage-header ${currentStageId === stage.id ? 'active' : ''}`;
-                header.innerHTML = `
-                    <span class="stage-icon">${stage.icon}</span>
-                    <span class="stage-title">${stage.title}</span>
-                    <span class="stage-progress">${completedCount}/${totalCount}</span>
-                `;
-                header.addEventListener('click', () => selectStage(stage.id));
-
-                const problems = document.createElement('div');
-                problems.className = `stage-problems ${currentStageId === stage.id ? 'open' : ''}`;
-
-                const theoryLink = document.createElement('button');
-                theoryLink.className = 'problem-link';
-                theoryLink.innerHTML = `<span class="problem-status"></span> 📖 Lý thuyết`;
-                theoryLink.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectStage(stage.id);
-                    switchTab('theory');
-                });
-                problems.appendChild(theoryLink);
-
-                stage.problems.forEach(p => {
-                    const link = document.createElement('button');
-                    const progress = progressData[p.id];
-                    const statusClass = progress?.completed ? 'completed' : (progress?.attempts > 0 ? 'attempted' : '');
-                    const diffClass = p.difficulty === 'Khởi động' ? 'easy' : (p.difficulty === 'Vận dụng' ? 'medium' : 'hard');
-
-                    link.className = `problem-link ${currentProblemId === p.id ? 'active' : ''}`;
-                    link.innerHTML = `
-                        <span class="problem-status ${statusClass}"></span>
-                        <span>${p.title}</span>
-                        <span class="difficulty-badge ${diffClass}">${p.difficulty === 'Khởi động' ? '★' : p.difficulty === 'Vận dụng' ? '★★' : '★★★'}</span>
-                    `;
-                    link.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        selectProblem(stage.id, p.id);
+            // Mục nhỏ 1: Lí Thuyết (Gom toàn bộ 8 chặng lý thuyết vào đây)
+            makeSubFolder(body, {
+                icon: '📖',
+                label: 'Lí Thuyết',
+                defaultOpen: true,
+                content(subBody) {
+                    stagesData.forEach(stage => {
+                        const link = document.createElement('button');
+                        const isTheoryActive = (currentStageId === stage.id && !document.getElementById('theory-content')?.classList.contains('hidden'));
+                        link.className = `problem-link ${isTheoryActive ? 'active' : ''}`;
+                        link.innerHTML = `
+                            <span class="problem-status"></span>
+                            <span>${stage.icon} Chặng ${stage.id}: ${stage.title}</span>
+                        `;
+                        link.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectStage(stage.id);
+                            switchTab('theory');
+                        });
+                        subBody.appendChild(link);
                     });
-                    problems.appendChild(link);
-                });
+                }
+            });
 
-                group.appendChild(header);
-                group.appendChild(problems);
-                body.appendChild(group);
+            // Mục nhỏ 2: Bài tập (8 chặng bài tập thực hành & chấm test tự động)
+            makeSubFolder(body, {
+                icon: '📝',
+                label: 'Bài tập',
+                defaultOpen: true,
+                content(subBody) {
+                    stagesData.forEach(stage => {
+                        const group = document.createElement('div');
+                        group.className = 'stage-group';
+
+                        const completedCount = stage.problems.filter(p =>
+                            progressData[p.id]?.completed
+                        ).length;
+                        const totalCount = stage.problems.length;
+
+                        const header = document.createElement('button');
+                        const isStageActive = (currentStageId === stage.id && !document.getElementById('problem-content')?.classList.contains('hidden'));
+                        header.className = `stage-header ${isStageActive ? 'active' : ''}`;
+                        header.innerHTML = `
+                            <span class="stage-icon">${stage.icon}</span>
+                            <span class="stage-title">${stage.title}</span>
+                            <span class="stage-progress">${completedCount}/${totalCount}</span>
+                        `;
+
+                        const problems = document.createElement('div');
+                        problems.className = `stage-problems ${currentStageId === stage.id && currentProblemId ? 'open' : ''}`;
+
+                        header.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            header.classList.toggle('active');
+                            problems.classList.toggle('open');
+                        });
+
+                        stage.problems.forEach(p => {
+                            const link = document.createElement('button');
+                            const progress = progressData[p.id];
+                            const statusClass = progress?.completed ? 'completed' : (progress?.attempts > 0 ? 'attempted' : '');
+                            const diffClass = p.difficulty === 'Khởi động' ? 'easy' : (p.difficulty === 'Vận dụng' ? 'medium' : 'hard');
+
+                            link.className = `problem-link ${currentProblemId === p.id ? 'active' : ''}`;
+                            link.innerHTML = `
+                                <span class="problem-status ${statusClass}"></span>
+                                <span>${p.title}</span>
+                                <span class="difficulty-badge ${diffClass}">${p.difficulty === 'Khởi động' ? '★' : p.difficulty === 'Vận dụng' ? '★★' : '★★★'}</span>
+                            `;
+                            link.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                selectProblem(stage.id, p.id);
+                            });
+                            problems.appendChild(link);
+                        });
+
+                        group.appendChild(header);
+                        group.appendChild(problems);
+                        subBody.appendChild(group);
+                    });
+                }
             });
         }
     });
 
     // ---- Folder 2: Ôn TN THPT QGia ----
     makeFolder({
-        icon: '📝',
+        icon: '📑',
         label: 'Ôn TN THPT QGia',
         defaultOpen: false,
         content(body) {
@@ -492,19 +548,9 @@ function renderSidebar() {
         }
     });
 
-    // ---- Folder 3: Luyện Đề (placeholder) ----
+    // ---- Folder 3: BTap GV giao (placeholder) ----
     makeFolder({
-        icon: '📋',
-        label: 'Luyện Đề',
-        defaultOpen: false,
-        content(body) {
-            body.innerHTML = `<div class="folder-placeholder">📂 Chưa có đề — Thêm đề thi tại đây</div>`;
-        }
-    });
-
-    // ---- Folder 4: BTap GV giao (placeholder) ----
-    makeFolder({
-        icon: '✏️',
+        icon: '🖊️',
         label: 'BTap GV giao',
         defaultOpen: false,
         content(body) {
@@ -1086,6 +1132,44 @@ function renderRoadmap() {
         label: 'Ôn HSG',
         defaultOpen: false,
         content(body) {
+            // Section 1: Lí Thuyết (8 chặng)
+            const theorySec = document.createElement('div');
+            theorySec.className = 'roadmap-subsection';
+            theorySec.innerHTML = `
+                <div class="roadmap-subsection-header">
+                    <span class="rss-icon">📖</span>
+                    <span class="rss-title">Lí Thuyết 8 Chặng</span>
+                    <span class="rss-desc">Nền tảng kiến thức & Góc Vũ Khí Python</span>
+                </div>
+            `;
+            const theoryGrid = document.createElement('div');
+            stagesData.forEach(stage => {
+                const stageEl = document.createElement('div');
+                stageEl.className = 'roadmap-stage';
+                stageEl.innerHTML = `
+                    <div class="stage-number">${stage.id}</div>
+                    <div class="stage-card" onclick="goToStageTheory(${stage.id})">
+                        <div class="stage-card-title">${stage.icon} Chặng ${stage.id}: ${stage.title}</div>
+                        <div class="stage-card-desc">📖 Đọc lý thuyết chi tiết & vũ khí thi HSG</div>
+                    </div>
+                `;
+                theoryGrid.appendChild(stageEl);
+            });
+            theorySec.appendChild(theoryGrid);
+            body.appendChild(theorySec);
+
+            // Section 2: Bài tập (24 bài tập thực hành)
+            const practiceSec = document.createElement('div');
+            practiceSec.className = 'roadmap-subsection';
+            practiceSec.style.marginTop = '28px';
+            practiceSec.innerHTML = `
+                <div class="roadmap-subsection-header">
+                    <span class="rss-icon">📝</span>
+                    <span class="rss-title">Bài Tập Thực Hành</span>
+                    <span class="rss-desc">24 bài tập chia theo 8 chặng — Chấm 10 test tự động</span>
+                </div>
+            `;
+            const practiceGrid = document.createElement('div');
             stagesData.forEach(stage => {
                 const completedCount = stage.problems.filter(p =>
                     progressData[p.id]?.completed
@@ -1111,8 +1195,10 @@ function renderRoadmap() {
                         <div class="stage-card-problems">${problemTags}</div>
                     </div>
                 `;
-                body.appendChild(stageEl);
+                practiceGrid.appendChild(stageEl);
             });
+            practiceSec.appendChild(practiceGrid);
+            body.appendChild(practiceSec);
         }
     });
 
@@ -1145,17 +1231,7 @@ function renderRoadmap() {
         }
     });
 
-    // ---- Folder 3: Luyện Đề ----
-    makeRoadmapFolder({
-        icon: '📋',
-        label: 'Luyện Đề',
-        defaultOpen: false,
-        content(body) {
-            body.innerHTML = `<div class="roadmap-placeholder">📂 Chưa có đề — Sẽ cập nhật sau</div>`;
-        }
-    });
-
-    // ---- Folder 4: BTap GV giao ----
+    // ---- Folder 3: BTap GV giao ----
     makeRoadmapFolder({
         icon: '🖊️',
         label: 'BTap GV giao',
@@ -1166,9 +1242,19 @@ function renderRoadmap() {
     });
 }
 
+function goToStageTheory(stageId) {
+    switchView('learn');
+    selectStage(stageId);
+    switchTab('theory');
+}
+
 function goToStage(stageId) {
     switchView('learn');
     selectStage(stageId);
+    const stage = stagesData.find(s => s.id === stageId);
+    if (stage && stage.problems.length > 0) {
+        selectProblem(stageId, stage.problems[0].id);
+    }
 }
 
 function goToTHPTTheory(topicId) {
