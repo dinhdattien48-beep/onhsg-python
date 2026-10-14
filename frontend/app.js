@@ -13,7 +13,7 @@ let currentStageId = null;
 let currentProblemId = null;
 let stagesData = [];
 let progressData = {};
-let currentView = 'learn';  // 'learn' or 'roadmap'
+let currentView = 'roadmap';  // Default is 'roadmap'
 let stagesDetailCache = {};
 
 // Auth State
@@ -37,12 +37,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadProgress();
     renderSidebar();
 
-    // Khôi phục bài tập và đoạn code học sinh đang làm dở nếu có
+    // Khôi phục bài tập và đoạn code học sinh đang làm dở nếu có (sẵn sàng trong bộ nhớ/giao diện)
     const lastStageId = localStorage.getItem('hsg_last_stage_id');
     const lastProblemId = localStorage.getItem('hsg_last_problem_id');
     if (lastStageId && lastProblemId) {
         await selectProblem(parseInt(lastStageId), lastProblemId);
     }
+
+    // Luôn hiển thị giao diện mặc định (Roadmap) khi vừa vào web
+    switchView('roadmap');
 });
 
 // ============================================================================
@@ -105,6 +108,16 @@ function saveProblemCodeToStorage(problemId, code) {
 // ============================================================================
 
 function initEventListeners() {
+    // Click logo TDat ở góc trên cùng bên trái -> Trở về giao diện mặc định (Roadmap)
+    const handleLogoClick = () => {
+        switchView('roadmap');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const rView = document.getElementById('roadmap-view');
+        if (rView) rView.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    document.getElementById('site-logo')?.addEventListener('click', handleLogoClick);
+    document.getElementById('logo-tdat')?.addEventListener('click', handleLogoClick);
+
     // Navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => switchView(btn.dataset.view));
@@ -1062,8 +1075,8 @@ function renderRoadmap() {
 
     const titleEl = document.createElement('div');
     titleEl.innerHTML = `
-        <h1 class="roadmap-title">🗺️ Lộ trình Học Tập Python</h1>
-        <p class="roadmap-subtitle">Từ con số 0 → Chinh phục mọi kỳ thi</p>
+        <h1 class="roadmap-title">📖 Lộ Trình Học Tập & Ôn Luyện Tin Học</h1>
+        <p class="roadmap-subtitle">Từ con số 0 → Tự tin chinh phục mọi kỳ thi (HSG, THPT Quốc Gia & Bài tập trên lớp)</p>
     `;
     container.appendChild(titleEl);
 
@@ -1105,7 +1118,7 @@ function renderRoadmap() {
 
     // ---- Folder 2: Ôn TN THPT QGia ----
     makeRoadmapFolder({
-        icon: '📝',
+        icon: '📑',
         label: 'Ôn TN THPT QGia',
         defaultOpen: false,
         content(body) {
@@ -1144,7 +1157,7 @@ function renderRoadmap() {
 
     // ---- Folder 4: BTap GV giao ----
     makeRoadmapFolder({
-        icon: '✏️',
+        icon: '🖊️',
         label: 'BTap GV giao',
         defaultOpen: false,
         content(body) {
@@ -1672,8 +1685,8 @@ function logout(showAlert = true) {
     document.getElementById('user-profile-btn').style.display = 'none';
     document.getElementById('btn-admin-dashboard').style.display = 'none';
     if (showAlert) alert("Đã đăng xuất.");
-    // Trở về trang chủ
-    switchView('learn');
+    // Trở về trang chủ mặc định (Roadmap)
+    switchView('roadmap');
 }
 
 function showProfileModal() {

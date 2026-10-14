@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HSG Python — Luyện thi Học Sinh Giỏi Tin học</title>
-    <meta name="description" content="Nền tảng dạy và luyện thi Học Sinh Giỏi Tin học bằng Python từ con số 0. Lộ trình 8 chặng, chấm bài tự động, AI Mentor nhận xét.">
+    <title>HSG Python — Cổng Ôn Luyện & Học Tập Tin Học Toàn Diện</title>
+    <meta name="description" content="Nền tảng dạy và luyện thi Học Sinh Giỏi & Tin học THPT từ con số 0. Lộ trình toàn diện, chấm bài tự động, AI Mentor nhận xét.">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,17 +31,17 @@
     <!-- ===== HEADER ===== -->
     <header id="app-header">
         <div class="header-left">
-            <div class="logo">
+            <div class="logo" id="site-logo" title="Về trang chủ lộ trình">
                 <span class="logo-tdat" id="logo-tdat">TDat</span>
             </div>
         </div>
         <div class="header-center">
             <nav class="header-nav">
-                <button class="nav-btn active" data-view="learn" id="nav-learn">
-                    <span class="nav-icon">📚</span> Ôn HSG
+                <button class="nav-btn" data-view="learn" id="nav-learn">
+                    <span class="nav-icon">🏆</span> Ôn HSG
                 </button>
-                <button class="nav-btn" data-view="roadmap" id="nav-roadmap">
-                    <span class="nav-icon">🗺️</span> Lộ trình
+                <button class="nav-btn active" data-view="roadmap" id="nav-roadmap">
+                    <span class="nav-icon">📖</span> Lộ trình
                 </button>
             </nav>
         </div>
@@ -59,7 +59,7 @@
     </header>
 
     <!-- ===== MAIN LAYOUT ===== -->
-    <main id="app-main">
+    <main id="app-main" style="display: none;">
         <!-- SIDEBAR -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -173,8 +173,8 @@
         </section>
     </main>
 
-    <!-- ===== ROADMAP VIEW ===== -->
-    <div class="roadmap-view hidden" id="roadmap-view">
+    <!-- ===== ROADMAP VIEW (DEFAULT) ===== -->
+    <div class="roadmap-view" id="roadmap-view">
         <div class="roadmap-container" id="roadmap-container">
             <!-- Populated by JS -->
         </div>
@@ -259,6 +259,7 @@
                         );
                         background-size:100% 100%;
                         -webkit-background-clip:text;
+                        background-clip:text;
                         -webkit-text-fill-color:transparent;
                         filter:
                             drop-shadow(0 -2px 1px rgba(255,255,255,.4))
@@ -584,6 +585,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=7"></script>
+    <script src="/static/app.js?v=8"></script>
 </body>
 </html>
