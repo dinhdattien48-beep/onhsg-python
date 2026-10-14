@@ -1,11 +1,15 @@
 - **Đã hoàn thành:** 
-  1. Tái cấu trúc mục **🏆 Ôn HSG**:
-     - Gom toàn bộ 8 chặng thành mục nhỏ mang tên **`📖 Lí Thuyết`**: Nhấn vào bất kỳ chặng nào sẽ mở ngay lý thuyết chuyên sâu và Góc Vũ Khí Python của chặng đó.
-     - Thêm mục nhỏ bên dưới mang tên **`📝 Bài tập`**: Gom toàn bộ 8 chặng bài tập (24 bài rèn luyện thuật toán, chấm 10 test tự động kèm AI Mentor).
-  2. Bỏ hoàn toàn mục lớn **`📋 Luyện Đề`** ở cả Sidebar và giao diện Lộ Trình (Roadmap).
-  3. Cập nhật hệ thống giao diện đồng bộ: Danh sách mục lớn hiện tại gồm 3 phần gọn gàng:
-     - 🏆 **Ôn HSG** (📖 Lí Thuyết & 📝 Bài tập)
-     - 📑 **Ôn TN THPT QGia**
-     - 🖊️ **BTap GV giao**
+  1. Tách biệt hoàn toàn tên các mục trong phần **`📝 Bài tập`** so với phần **`📖 Lí Thuyết`**:
+     - **Phần Lí Thuyết** giữ nguyên tên chặng chuẩn: *Chặng 1: Làm quen Python & Nhập xuất chuẩn thi HSG*, *Chặng 2: Rẽ nhánh & Toán học thông minh*, v.v.
+     - **Phần Bài tập** được đổi tên thực hành rõ ràng:
+       - 🚀 *Bài tập về Nhập xuất & Biến cơ bản*
+       - 🔀 *Bài tập về Cấu trúc Rẽ nhánh & Toán học*
+       - 🔄 *Bài tập về Vòng lặp & Khử vòng lặp*
+       - 📝 *Bài tập về Xử lý Xâu ký tự (String)*
+       - 📊 *Bài tập về Danh sách (List) & Set/Dict*
+       - 🔢 *Bài tập về Số học & Thuật toán thi HSG*
+       - 📈 *Bài tập về Sắp xếp & Tìm kiếm nhị phân*
+       - ⚡ *Bài tập về Prefix Sum, Hai con trỏ & Đệ quy*
+  2. Áp dụng đồng bộ cho cả **Sidebar bên trái** và **Giao diện Lộ trình (Roadmap)**.
 - **Đang làm dở:** Không.
-- **Bước tiếp theo:** Người dùng nhấn F5 (hoặc Ctrl+F5) trên trình duyệt để kiểm tra cấu trúc sidebar mới.
+- **Bước tiếp theo:** Người dùng nhấn F5 (hoặc Ctrl+F5) để kiểm tra giao diện mới.
