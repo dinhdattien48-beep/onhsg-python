@@ -106,6 +106,25 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=401, detail="Tài khoản không tồn tại")
     return dict(user)
 
+def get_optional_user(token: str = Depends(oauth2_scheme)) -> Optional[dict]:
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if not email:
+            return None
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, full_name, email, role FROM users WHERE email = ?", (email,))
+        user = cursor.fetchone()
+        conn.close()
+        if user:
+            return dict(user)
+    except Exception:
+        pass
+    return None
+
 def require_owner(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") != "Owner":
         raise HTTPException(status_code=403, detail="Không có quyền truy cập (Yêu cầu quyền Owner)")

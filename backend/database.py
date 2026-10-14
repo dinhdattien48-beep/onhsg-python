@@ -91,6 +91,93 @@ def init_db():
         )
     """)
 
+    # Bảng lưu thông tin lớp học (Mỗi giáo viên tối đa 1 lớp: teacher_id UNIQUE)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS classes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id INTEGER UNIQUE NOT NULL,
+            class_code TEXT UNIQUE NOT NULL,
+            class_name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(teacher_id) REFERENCES users(id)
+        )
+    """)
+
+    # Bảng lưu học sinh tham gia lớp học
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS class_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            class_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(class_id, student_id),
+            FOREIGN KEY(class_id) REFERENCES classes(id),
+            FOREIGN KEY(student_id) REFERENCES users(id)
+        )
+    """)
+
+    # Bảng lưu bài tập do giáo viên giao cho lớp
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS class_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            class_id INTEGER NOT NULL,
+            teacher_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            time_limit REAL DEFAULT 1.0,
+            test_cases_json TEXT NOT NULL,
+            deadline TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(class_id) REFERENCES classes(id),
+            FOREIGN KEY(teacher_id) REFERENCES users(id)
+        )
+    """)
+
+    # Bảng lưu bài nộp cho bài tập giáo viên giao
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS assignment_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            student_name TEXT NOT NULL,
+            code TEXT NOT NULL,
+            score INTEGER DEFAULT 0,
+            total_tests INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            results_json TEXT,
+            ai_feedback TEXT,
+            submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(assignment_id) REFERENCES class_assignments(id),
+            FOREIGN KEY(student_id) REFERENCES users(id)
+        )
+    """)
+
+    # Bảng lưu tiến độ chi tiết theo từng tài khoản học sinh
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_progress (
+            user_id INTEGER NOT NULL,
+            problem_id TEXT NOT NULL,
+            stage_id INTEGER NOT NULL,
+            completed INTEGER DEFAULT 0,
+            best_score INTEGER DEFAULT 0,
+            attempts INTEGER DEFAULT 0,
+            last_code TEXT,
+            completed_at TIMESTAMP,
+            PRIMARY KEY (user_id, problem_id),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+    """)
+
+    # Migration an toàn thêm cột user_id, user_name vào submissions nếu chưa có
+    try:
+        cursor.execute("ALTER TABLE submissions ADD COLUMN user_id INTEGER DEFAULT NULL")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE submissions ADD COLUMN user_name TEXT DEFAULT NULL")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -118,18 +205,19 @@ def init_admin_account():
 
 
 def save_submission(problem_id: str, stage_id: int, code: str, score: int,
-                    total_tests: int, status: str, results: list, ai_feedback: str = ""):
-    """Lưu kết quả nộp bài."""
+                    total_tests: int, status: str, results: list, ai_feedback: str = "",
+                    user_id: int = None, user_name: str = None):
+    """Lưu kết quả nộp bài (hỗ trợ lưu theo user_id nếu đã đăng nhập)."""
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT INTO submissions (problem_id, stage_id, code, score, total_tests, status, results_json, ai_feedback)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO submissions (problem_id, stage_id, code, score, total_tests, status, results_json, ai_feedback, user_id, user_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (problem_id, stage_id, code, score, total_tests, status,
-          json.dumps(results, ensure_ascii=False), ai_feedback))
+          json.dumps(results, ensure_ascii=False), ai_feedback, user_id, user_name))
 
-    # Cập nhật progress
+    # Cập nhật progress chung
     cursor.execute("""
         INSERT INTO progress (problem_id, stage_id, completed, best_score, attempts, last_code, completed_at)
         VALUES (?, ?, ?, ?, 1, ?, ?)
@@ -145,14 +233,39 @@ def save_submission(problem_id: str, stage_id: int, code: str, score: int,
           score, total_tests,
           score, total_tests, datetime.now().isoformat()))
 
+    # Cập nhật user_progress nếu có user_id
+    if user_id:
+        cursor.execute("""
+            INSERT INTO user_progress (user_id, problem_id, stage_id, completed, best_score, attempts, last_code, completed_at)
+            VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+            ON CONFLICT(user_id, problem_id) DO UPDATE SET
+                best_score = MAX(best_score, ?),
+                attempts = attempts + 1,
+                last_code = ?,
+                completed = CASE WHEN ? >= ? THEN 1 ELSE completed END,
+                completed_at = CASE WHEN ? >= ? AND completed = 0 THEN ? ELSE completed_at END
+        """, (user_id, problem_id, stage_id, 1 if score >= total_tests else 0, score, code,
+              datetime.now().isoformat() if score >= total_tests else None,
+              score, code,
+              score, total_tests,
+              score, total_tests, datetime.now().isoformat()))
+
     conn.commit()
     conn.close()
 
 
-def get_progress():
-    """Lấy toàn bộ tiến độ học tập."""
+def get_progress(user_id: int = None):
+    """Lấy toàn bộ tiến độ học tập (ưu tiên lấy theo user_id nếu có)."""
     conn = get_connection()
     cursor = conn.cursor()
+    
+    if user_id:
+        cursor.execute("SELECT * FROM user_progress WHERE user_id = ?", (user_id,))
+        rows = cursor.fetchall()
+        if rows:
+            conn.close()
+            return {row["problem_id"]: dict(row) for row in rows}
+
     cursor.execute("SELECT * FROM progress")
     rows = cursor.fetchall()
     conn.close()

@@ -46,6 +46,9 @@
             </nav>
         </div>
         <div class="header-right">
+            <button class="nav-btn" id="btn-classroom" style="display:none; color: var(--accent-secondary);">
+                <span class="nav-icon">🏫</span> Lớp học
+            </button>
             <button class="nav-btn" id="btn-admin-dashboard" style="display:none; color: var(--accent-primary);">
                 <span class="nav-icon">🛡️</span> Quản trị
             </button>
@@ -585,6 +588,63 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=11"></script>
+    <!-- Classroom Modal -->
+    <div class="modal-overlay hidden" id="modal-classroom">
+        <div class="modal-content modal-classroom-content">
+            <div class="modal-classroom-header">
+                <div class="classroom-title-area">
+                    <span class="classroom-icon">🏫</span>
+                    <div>
+                        <h2 id="classroom-main-title">Hệ Thống Lớp Học</h2>
+                        <p class="classroom-subtitle" id="classroom-main-sub">Quản lý lớp học, phân phối bài tập và theo dõi tiến độ</p>
+                    </div>
+                </div>
+                <span class="modal-close" onclick="closeModals()">×</span>
+            </div>
+            <div class="classroom-modal-body" id="classroom-modal-body">
+                <!-- Dynamically populated based on role and class status -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Detail Inspection Modal (For Teachers) -->
+    <div class="modal-overlay hidden" id="modal-student-detail">
+        <div class="modal-content modal-large-content">
+            <div class="modal-classroom-header">
+                <div class="classroom-title-area">
+                    <span class="classroom-icon">👤</span>
+                    <div>
+                        <h2 id="student-detail-name">Học sinh</h2>
+                        <p class="classroom-subtitle" id="student-detail-meta">Email & thông tin lộ trình</p>
+                    </div>
+                </div>
+                <span class="modal-close" onclick="closeStudentDetailModal()">×</span>
+            </div>
+            <div class="modal-inner-scroll" id="student-detail-body">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission & Code Inspection Modal (For Teachers & Students) -->
+    <div class="modal-overlay hidden" id="modal-submission-detail">
+        <div class="modal-content modal-code-viewer-content">
+            <div class="modal-classroom-header">
+                <div class="classroom-title-area">
+                    <span class="classroom-icon">💻</span>
+                    <div>
+                        <h2 id="submission-viewer-title">Chi Tiết Bài Nộp</h2>
+                        <p class="classroom-subtitle" id="submission-viewer-meta">Điểm số & thời gian</p>
+                    </div>
+                </div>
+                <span class="modal-close" onclick="closeSubmissionDetailModal()">×</span>
+            </div>
+            <div class="modal-inner-scroll" id="submission-viewer-body">
+                <!-- Code & AI feedback -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=12"></script>
 </body>
 </html>

@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(BACKEND_DIR), ".env")
 load_dotenv(dotenv_path=env_path, override=True)
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -31,7 +31,8 @@ from database import (
     save_setting, get_setting,
     get_sample_code, save_sample_code
 )
-from auth import auth_router, admin_router
+from auth import auth_router, admin_router, get_optional_user
+from classroom import classroom_router
 
 # ============================================================================
 # KHỞI TẠO APP
@@ -57,9 +58,10 @@ FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "fronten
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
-# Đăng ký các router Auth và Admin
+# Đăng ký các router Auth, Admin và Classroom
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(classroom_router)
 
 
 # ============================================================================
@@ -285,8 +287,10 @@ async def run_code(req: RunRequest):
 
 
 @app.post("/api/submit")
-async def submit_code(req: SubmitRequest):
+async def submit_code(req: SubmitRequest, current_user: Optional[dict] = Depends(get_optional_user)):
     """Nộp bài chấm 10 test cases + AI Mentor nhận xét."""
+    user_id = current_user["id"] if current_user else None
+    user_name = current_user["full_name"] if current_user else None
     
     if req.problem_id == "thpt_3_sql":
         problem = {
@@ -373,6 +377,8 @@ async def submit_code(req: SubmitRequest):
         status="AC" if judge_result["score"] == judge_result["total"] else "WA",
         results=judge_result["results"],
         ai_feedback=ai_feedback,
+        user_id=user_id,
+        user_name=user_name,
     )
 
     # 5. Trả về kết quả đầy đủ cho tất cả 10 test (không ẩn test 6-10)
@@ -398,9 +404,10 @@ async def submit_code(req: SubmitRequest):
 
 
 @app.get("/api/progress")
-async def get_student_progress():
-    """Lấy tiến độ học tập tổng hợp."""
-    progress = get_progress()
+async def get_student_progress(current_user: Optional[dict] = Depends(get_optional_user)):
+    """Lấy tiến độ học tập tổng hợp (cá nhân hóa theo tài khoản)."""
+    user_id = current_user["id"] if current_user else None
+    progress = get_progress(user_id=user_id)
     return {"progress": progress}
 
 

@@ -2368,3 +2368,471 @@ a:hover {
     border: 1px solid var(--border-subtle); padding: 5px; border-radius: 4px;
 }
 
+/* =========================================
+   CLASSROOM LMS STYLES (TEACHER & STUDENT)
+   ========================================= */
+
+.modal-classroom-content, .modal-large-content, .modal-code-viewer-content {
+    max-width: 960px;
+    width: 94%;
+    max-height: 88vh;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #111827;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(99, 102, 241, 0.15);
+}
+
+.modal-large-content {
+    max-width: 1040px;
+}
+
+.modal-code-viewer-content {
+    max-width: 900px;
+}
+
+.modal-classroom-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: rgba(17, 24, 39, 0.95);
+    border-bottom: 1px solid var(--border-subtle);
+    backdrop-filter: blur(10px);
+}
+
+.classroom-title-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.classroom-icon {
+    font-size: 2rem;
+    background: rgba(99, 102, 241, 0.15);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.modal-classroom-header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.classroom-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.classroom-modal-body, .modal-inner-scroll {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Class Banner Card */
+.class-banner-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.class-banner-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.class-title-tag {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.class-code-badge-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px dashed rgba(168, 85, 247, 0.6);
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.class-code-badge-wrap:hover {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: #a855f7;
+    transform: translateY(-1px);
+}
+
+.class-code-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #c084fc;
+}
+
+.class-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.class-stat-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    text-align: center;
+}
+
+.class-stat-val {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-primary);
+}
+
+.class-stat-lbl {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Classroom Nav Tabs */
+.classroom-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 2px;
+}
+
+.classroom-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 10px 18px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.classroom-tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.classroom-tab-btn.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+}
+
+/* Students Table & Progress */
+.classroom-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+}
+
+.classroom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.classroom-table th, .classroom-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.classroom-table th {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.student-progress-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 140px;
+}
+
+.student-progress-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.student-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #06b6d4);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.student-progress-text {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #10b981;
+    min-width: 42px;
+}
+
+/* Stage Breakdown Cards in Student Detail Modal */
+.stages-grid-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stage-breakdown-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.stage-breakdown-card.completed {
+    border-color: rgba(16, 185, 129, 0.5);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.stage-breakdown-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.stage-breakdown-problems {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+}
+
+.stage-prob-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    color: var(--text-secondary);
+}
+
+.prob-badge-ac {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.prob-badge-wa {
+    color: #f59e0b;
+    font-weight: 700;
+}
+
+.prob-badge-empty {
+    color: var(--text-muted);
+}
+
+/* Assignments List & Cards */
+.assignments-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.assignment-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.assignment-card:hover {
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+}
+
+.assignment-main-info {
+    flex: 1;
+}
+
+.assignment-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.assignment-meta-row {
+    display: flex;
+    gap: 14px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.deadline-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+.deadline-active {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.deadline-expired {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Create Assignment Form */
+.create-assignment-box {
+    background: var(--bg-card);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.test-case-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.test-case-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.test-case-item textarea {
+    width: 100%;
+    min-height: 60px;
+    background: #0d1117;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    padding: 8px;
+    resize: vertical;
+}
+
+/* Submission Viewer Modal */
+.code-viewer-box {
+    background: #0d1117;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    max-height: 320px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: #e6edf3;
+    position: relative;
+}
+
+.copy-code-float-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.ai-critique-box {
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 4px solid var(--accent-primary);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 16px 20px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Student Join Classroom Empty State */
+.student-join-hero {
+    text-align: center;
+    padding: 30px 20px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.student-join-hero .hero-icon {
+    font-size: 4rem;
+    margin-bottom: 12px;
+}
+
+.class-code-input-lg {
+    font-size: 1.6rem !important;
+    text-align: center;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 14px !important;
+    color: #a855f7 !important;
+    border: 2px dashed rgba(168, 85, 247, 0.5) !important;
+}
+
+.class-code-input-lg:focus {
+    border-color: #a855f7 !important;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3) !important;
+}
+

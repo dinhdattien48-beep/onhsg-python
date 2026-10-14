@@ -195,6 +195,18 @@ async function apiPut(path, data) {
     return resData;
 }
 
+async function apiDelete(path) {
+    const headers = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const res = await fetch(`${API_BASE}${path}`, {
+        method: 'DELETE',
+        headers,
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.detail || `API Error: ${res.status}`);
+    return resData;
+}
+
 // ============================================================================
 // DATA LOADING
 // ============================================================================
@@ -573,13 +585,13 @@ function renderSidebar() {
         }
     });
 
-    // ---- Folder 3: BTap GV giao (placeholder) ----
+    // ---- Folder 3: BTap GV giao ----
     makeFolder({
         icon: '🖊️',
         label: 'BTap GV giao',
         defaultOpen: false,
         content(body) {
-            body.innerHTML = `<div class="folder-placeholder">📂 Chưa có bài — GV thêm bài tại đây</div>`;
+            renderSidebarClassroomFolder(body);
         }
     });
 }
@@ -843,12 +855,22 @@ async function submitCode() {
     showLoading('Đang chấm 10 test cases...');
 
     try {
-        const result = await apiPost('/api/submit', {
-            problem_id: currentProblemId,
-            code,
-            api_key: customApiKey,
-            model_name: customModel,
-        });
+        let result;
+        if (currentProblemId.startsWith('assignment_')) {
+            const assignmentId = currentProblemId.replace('assignment_', '');
+            result = await apiPost(`/api/classroom/student/assignment/${assignmentId}/submit`, {
+                code,
+                api_key: customApiKey,
+                model_name: customModel,
+            });
+        } else {
+            result = await apiPost('/api/submit', {
+                problem_id: currentProblemId,
+                code,
+                api_key: customApiKey,
+                model_name: customModel,
+            });
+        }
 
         if (currentProblemId === 'thpt_3_sql') {
             document.getElementById('results-content').innerHTML = `
@@ -1262,7 +1284,7 @@ function renderRoadmap() {
         label: 'BTap GV giao',
         defaultOpen: false,
         content(body) {
-            body.innerHTML = `<div class="roadmap-placeholder">📂 Chưa có bài — GV thêm bài tập tại đây</div>`;
+            renderRoadmapClassroomFolder(body);
         }
     });
 }
@@ -1692,6 +1714,7 @@ async function initAuth() {
     const btnProfile = document.getElementById('user-profile-btn');
     const nameDisplay = document.getElementById('display-user-name');
     const btnAdmin = document.getElementById('btn-admin-dashboard');
+    const btnClassroom = document.getElementById('btn-classroom');
 
     if (authToken) {
         try {
@@ -1699,9 +1722,14 @@ async function initAuth() {
             btnLogin.style.display = 'none';
             btnProfile.style.display = 'flex';
             nameDisplay.textContent = currentUser.full_name;
+            if (btnClassroom) btnClassroom.style.display = 'inline-block';
             if (currentUser.role === 'Owner') {
                 btnAdmin.style.display = 'inline-block';
             }
+            // Reload user progress and update folders
+            await loadProgress();
+            renderSidebar();
+            if (currentView === 'roadmap') renderRoadmap();
         } catch (e) {
             console.warn("Phiên đăng nhập hết hạn hoặc lỗi:", e);
             logout(false);
@@ -1710,6 +1738,7 @@ async function initAuth() {
         btnLogin.style.display = 'inline-block';
         btnProfile.style.display = 'none';
         btnAdmin.style.display = 'none';
+        if (btnClassroom) btnClassroom.style.display = 'none';
     }
 
     // Modal toggles
@@ -1719,6 +1748,7 @@ async function initAuth() {
     btnProfile.addEventListener('click', showProfileModal);
     document.getElementById('btn-logout').addEventListener('click', () => logout(true));
     btnAdmin.addEventListener('click', showAdminDashboard);
+    if (btnClassroom) btnClassroom.addEventListener('click', openClassroomModal);
 
     // Form handlers
     document.getElementById('btn-send-otp').addEventListener('click', sendOtp);
@@ -1795,8 +1825,11 @@ function logout(showAlert = true) {
     document.getElementById('btn-show-login').style.display = 'inline-block';
     document.getElementById('user-profile-btn').style.display = 'none';
     document.getElementById('btn-admin-dashboard').style.display = 'none';
+    const btnClassroom = document.getElementById('btn-classroom');
+    if (btnClassroom) btnClassroom.style.display = 'none';
     if (showAlert) alert("Đã đăng xuất.");
-    // Trở về trang chủ mặc định (Roadmap)
+    loadProgress();
+    renderSidebar();
     switchView('roadmap');
 }
 
@@ -1881,4 +1914,1086 @@ async function changeUserRole(userId, newRole) {
         alert("Lỗi: " + e.message);
         loadAdminUsers(); // revert
     }
+}
+
+
+// ============================================================================
+// CLASSROOM LMS MODULE (QUẢN LÝ LỚP HỌC & BÀI TẬP GIÁO VIÊN GIAO)
+// ============================================================================
+
+let teacherClass = null;
+let studentClass = null;
+let currentAssignment = null;
+
+function setTeacherActiveTab(activeBtn) {
+    document.querySelectorAll('.classroom-tab-btn').forEach(b => b.classList.remove('active'));
+    activeBtn.classList.add('active');
+}
+
+function closeStudentDetailModal() {
+    document.getElementById('modal-student-detail').classList.add('hidden');
+}
+
+function closeSubmissionDetailModal() {
+    document.getElementById('modal-submission-detail').classList.add('hidden');
+}
+
+// ---- SIDEBAR & ROADMAP FOLDER 3 (BTAP GV GIAO) ----
+
+async function renderSidebarClassroomFolder(body) {
+    if (!currentUser) {
+        body.innerHTML = `
+            <div class="folder-placeholder" style="cursor:pointer; color:var(--text-muted);" onclick="openModal('modal-login')">
+                🔒 Đăng nhập để xem bài tập GV giao
+            </div>
+        `;
+        return;
+    }
+
+    if (currentUser.role === 'Giáo Viên' || currentUser.role === 'Owner') {
+        body.innerHTML = `
+            <div class="folder-placeholder" style="cursor:pointer; color:var(--accent-secondary); font-weight:600; padding:10px 14px; text-align:left;" onclick="openClassroomModal()">
+                🏫 Quản lý lớp học & Giao bài ➔
+            </div>
+        `;
+        return;
+    }
+
+    body.innerHTML = `<div class="folder-placeholder">⏳ Đang tải bài tập lớp...</div>`;
+    try {
+        const myClass = await apiGet('/api/classroom/student/my-class');
+        if (!myClass.has_class) {
+            body.innerHTML = `
+                <div class="folder-placeholder" style="cursor:pointer; color:var(--accent-primary); font-weight:600; padding:10px 14px; text-align:left;" onclick="openClassroomModal()">
+                    🏫 Chưa vào lớp. Nhấn để nhập mã lớp ➔
+                </div>
+            `;
+            return;
+        }
+
+        const data = await apiGet('/api/classroom/student/assignments');
+        const assignments = data.assignments || [];
+        if (assignments.length === 0) {
+            body.innerHTML = `<div class="folder-placeholder">🎉 Lớp chưa có bài tập mới nào!</div>`;
+            return;
+        }
+
+        body.innerHTML = '';
+        assignments.forEach(a => {
+            const btn = document.createElement('button');
+            const isAc = a.has_submitted && a.status === 'AC';
+            const isWa = a.has_submitted && a.status !== 'AC';
+            btn.className = 'problem-link';
+            if (currentProblemId === 'assignment_' + a.id) btn.classList.add('active');
+            
+            let statusIcon = '⭕';
+            let statusClass = '';
+            if (isAc) {
+                statusIcon = '✅';
+                statusClass = 'completed';
+            } else if (isWa) {
+                statusIcon = '⚠️';
+                statusClass = 'attempted';
+            }
+
+            btn.innerHTML = `<span class="problem-status ${statusClass}">${statusIcon}</span> ${escapeHtml(a.title)}`;
+            btn.title = `Hạn nộp: ${a.deadline || 'Không giới hạn'} | Điểm: ${a.has_submitted ? a.score + '/' + a.total_tests : 'Chưa nộp'}`;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openAssignmentProblem(a);
+            });
+            body.appendChild(btn);
+        });
+    } catch (e) {
+        body.innerHTML = `<div class="folder-placeholder" style="color:#ef4444;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+async function renderRoadmapClassroomFolder(body) {
+    if (!currentUser) {
+        body.innerHTML = `
+            <div class="roadmap-placeholder" style="cursor:pointer; padding: 24px;" onclick="openModal('modal-login')">
+                🔒 Vui lòng <b>Đăng nhập</b> để xem các bài tập do Giáo Viên giao riêng cho lớp của bạn.
+            </div>
+        `;
+        return;
+    }
+
+    if (currentUser.role === 'Giáo Viên' || currentUser.role === 'Owner') {
+        body.innerHTML = `
+            <div class="roadmap-placeholder" style="cursor:pointer; padding: 24px; color:var(--accent-secondary);" onclick="openClassroomModal()">
+                🏫 <b>Tài khoản Giáo viên:</b> Nhấn vào đây để mở Bảng điều khiển Lớp học, tạo bài tập & theo dõi tiến độ học sinh ➔
+            </div>
+        `;
+        return;
+    }
+
+    body.innerHTML = `<div class="roadmap-placeholder">⏳ Đang tải bài tập lớp...</div>`;
+    try {
+        const myClass = await apiGet('/api/classroom/student/my-class');
+        if (!myClass.has_class) {
+            body.innerHTML = `
+                <div class="roadmap-placeholder" style="cursor:pointer; padding: 24px; color:var(--accent-primary);" onclick="openClassroomModal()">
+                    🏫 Bạn chưa tham gia lớp học nào. Nhấn vào đây để <b>nhập mã lớp do Thầy/Cô cung cấp</b> ➔
+                </div>
+            `;
+            return;
+        }
+
+        const data = await apiGet('/api/classroom/student/assignments');
+        const assignments = data.assignments || [];
+        if (assignments.length === 0) {
+            body.innerHTML = `<div class="roadmap-placeholder">🎉 Thầy cô chưa giao bài mới nào cho lớp <b>${escapeHtml(myClass.class.class_name)}</b>. Hãy chăm chỉ luyện các chặng HSG nhé!</div>`;
+            return;
+        }
+
+        body.innerHTML = '';
+        assignments.forEach(a => {
+            const card = document.createElement('div');
+            card.className = 'stage-card';
+            const isAc = a.has_submitted && a.status === 'AC';
+            const isWa = a.has_submitted && a.status !== 'AC';
+            const statusBadge = isAc 
+                ? '<span style="color:#10b981;font-weight:700;">✅ Đã nộp: ' + a.score + '/' + a.total_tests + ' AC</span>'
+                : isWa 
+                ? '<span style="color:#f59e0b;font-weight:700;">⚠️ Đã nộp: ' + a.score + '/' + a.total_tests + ' (Chưa hoàn thành)</span>'
+                : '<span style="color:var(--text-muted);">⭕ Chưa làm</span>';
+
+            card.innerHTML = `
+                <div class="stage-card-icon">🖊️</div>
+                <div class="stage-card-body">
+                    <div class="stage-card-title">${escapeHtml(a.title)}</div>
+                    <div class="stage-card-desc">
+                        ${statusBadge} • ⏱️ ${a.time_limit || 1.0}s • 📅 ${a.deadline ? 'Hạn: ' + new Date(a.deadline).toLocaleDateString('vi-VN') : 'Không giới hạn hạn nộp'}
+                    </div>
+                </div>
+            `;
+            card.addEventListener('click', () => openAssignmentProblem(a));
+            body.appendChild(card);
+        });
+    } catch (e) {
+        body.innerHTML = `<div class="roadmap-placeholder" style="color:#ef4444;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+// ---- OPEN ASSIGNMENT PROBLEM IN EDITOR & PROBLEM PANEL ----
+
+async function openAssignmentProblem(assignment) {
+    currentProblemId = 'assignment_' + assignment.id;
+    currentStageId = null;
+    currentAssignment = assignment;
+
+    try {
+        localStorage.setItem('hsg_last_stage_id', '');
+        localStorage.setItem('hsg_last_problem_id', currentProblemId);
+    } catch (e) {}
+
+    closeModals();
+    switchView('learn');
+    configureEditorForTopic(null);
+
+    const editorTitleText = document.getElementById('editor-title-text');
+    if (editorTitleText) editorTitleText.innerText = `Bài tập GV: ${assignment.title}`;
+
+    const deadlineText = assignment.deadline 
+        ? `📅 Hạn nộp: ${new Date(assignment.deadline).toLocaleString('vi-VN')}` 
+        : '📅 Hạn nộp: Không giới hạn';
+
+    const sampleTestsHtml = (assignment.sample_tests && assignment.sample_tests.length > 0)
+        ? `
+            <div style="margin-top: 16px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px;">
+                <h4 style="margin: 0 0 8px; color: var(--accent-secondary); font-size: 0.9rem;">Ví dụ Test mẫu:</h4>
+                ${assignment.sample_tests.map((tc, idx) => `
+                    <div style="margin-bottom: 8px; font-size: 0.82rem;">
+                        <b>Test ${idx + 1}:</b>
+                        <div style="background:#0d1117; padding:6px; border-radius:4px; font-family:monospace; margin-top:2px;">
+                            Input: ${escapeHtml(tc.input || '(trống)')}<br>
+                            Expected: ${escapeHtml(tc.expected_output || '(trống)')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `
+        : '';
+
+    document.getElementById('problem-content').innerHTML = `
+        <div class="problem-meta" style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
+            <span class="difficulty-badge medium" style="font-size:0.8rem;padding:3px 10px;">
+                🖊️ Bài tập Giáo viên giao
+            </span>
+            <span style="color:var(--text-muted);font-size:0.8rem;">
+                ⏱️ Giới hạn: ${assignment.time_limit || 1.0}s/test
+            </span>
+            <span style="color:var(--text-muted);font-size:0.8rem;">
+                ${deadlineText}
+            </span>
+        </div>
+        <h2 style="margin-bottom: 12px; color: var(--text-primary); font-size: 1.3rem;">${escapeHtml(assignment.title)}</h2>
+        <div class="assignment-desc-markdown">
+            ${renderMarkdown(assignment.description)}
+        </div>
+        ${sampleTestsHtml}
+    `;
+    renderMath(document.getElementById('problem-content'));
+
+    // Switch to problem tab
+    document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('theory-content').classList.add('hidden');
+    document.getElementById('problem-content').classList.remove('hidden');
+    document.getElementById('ai-content').classList.add('hidden');
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === 'problem');
+    });
+
+    // Load saved code for this assignment or default python starter
+    const savedCode = localStorage.getItem('code_problem_' + currentProblemId);
+    if (savedCode && savedCode.trim()) {
+        editor.setValue(savedCode);
+    } else {
+        editor.setValue('# Viết code Python giải bài tập giáo viên giao tại đây\nimport sys\ninput = sys.stdin.readline\n\n');
+    }
+
+    // Reset results and AI placeholder
+    document.getElementById('results-content').innerHTML = `
+        <div class="results-placeholder"><p>Nhấn <strong>🚀 Nộp bài</strong> để chấm với bộ test của giáo viên & nhận xét từ AI Mentor.</p></div>
+    `;
+    document.getElementById('ai-content').innerHTML = `
+        <div class="ai-placeholder">
+            <span class="ai-icon">🤖</span>
+            <p>Nhận xét từ AI Mentor sẽ hiển thị ở đây sau khi em nộp bài.</p>
+        </div>
+    `;
+
+    renderSidebar();
+}
+
+// ---- CLASSROOM MAIN MODAL CONTROLLER ----
+
+async function openClassroomModal() {
+    if (!currentUser) {
+        showToast('⚠️ Vui lòng đăng nhập để sử dụng tính năng Lớp học!');
+        openModal('modal-login');
+        return;
+    }
+
+    openModal('modal-classroom');
+    const body = document.getElementById('classroom-modal-body');
+    body.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted);">⏳ Đang tải dữ liệu lớp học...</div>';
+
+    if (currentUser.role === 'Giáo Viên' || currentUser.role === 'Owner') {
+        document.getElementById('classroom-main-title').textContent = '🏫 Bảng Điều Khiển Lớp Học (Giáo Viên)';
+        document.getElementById('classroom-main-sub').textContent = 'Quản lý mã lớp, học sinh, giao bài tập và theo dõi lộ trình làm bài';
+        await renderTeacherClassroom(body);
+    } else {
+        document.getElementById('classroom-main-title').textContent = '🏫 Lớp Học Của Bạn';
+        document.getElementById('classroom-main-sub').textContent = 'Tham gia lớp của Thầy/Cô để nhận đề bài tập và theo dõi tiến độ';
+        await renderStudentClassroom(body);
+    }
+}
+
+// ---- TEACHER CLASSROOM WORKSPACE ----
+
+async function renderTeacherClassroom(body) {
+    try {
+        const res = await apiGet('/api/classroom/teacher/class');
+        if (!res.has_class) {
+            body.innerHTML = `
+                <div class="class-banner-card" style="text-align: center; padding: 30px;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🎓</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 8px;">Bạn Chưa Tạo Lớp Học</h3>
+                    <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 20px;">
+                        Mỗi tài khoản Giáo Viên được quản lý tối đa 1 mã lớp học. Hãy tạo lớp để học sinh nhập mã tham gia và bắt đầu giao bài tập!
+                    </p>
+                    <div style="max-width: 420px; margin: 0 auto; text-align: left;">
+                        <div class="form-group">
+                            <label>Tên lớp học *</label>
+                            <input type="text" id="new-class-name" placeholder="Ví dụ: Đội Tuyển HSG Tin Học 12" style="font-weight: 600;">
+                        </div>
+                        <div class="form-group">
+                            <label>Mã lớp tùy chỉnh (Không bắt buộc - để trống hệ thống tự tạo)</label>
+                            <input type="text" id="new-class-code" placeholder="Ví dụ: TIN12A, HSG839" maxlength="10" style="font-family: monospace; letter-spacing: 2px;">
+                        </div>
+                        <button class="btn-primary" id="btn-create-class" style="margin-top: 15px;">🚀 Tạo Lớp Học Ngay</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('btn-create-class').addEventListener('click', handleCreateClass);
+            return;
+        }
+
+        const cls = res.class;
+        teacherClass = cls;
+
+        body.innerHTML = `
+            <!-- Banner -->
+            <div class="class-banner-card">
+                <div class="class-banner-top">
+                    <div>
+                        <div class="class-title-tag">
+                            <span>🏫 ${escapeHtml(cls.class_name)}</span>
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                            Khởi tạo ngày: ${new Date(cls.created_at).toLocaleDateString('vi-VN')}
+                        </div>
+                    </div>
+                    <div class="class-code-badge-wrap" id="btn-copy-code" title="Nhấn để sao chép mã lớp">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Mã lớp:</span>
+                        <span class="class-code-text">${cls.class_code}</span>
+                        <span style="font-size: 1rem;">📋</span>
+                    </div>
+                </div>
+                <div class="class-stats-grid">
+                    <div class="class-stat-box">
+                        <div class="class-stat-val">${cls.student_count}</div>
+                        <div class="class-stat-lbl">Học sinh trong lớp</div>
+                    </div>
+                    <div class="class-stat-box">
+                        <div class="class-stat-val">${cls.assignment_count}</div>
+                        <div class="class-stat-lbl">Bài tập đã giao</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="classroom-tabs">
+                <button class="classroom-tab-btn active" data-tab="students" id="tab-teacher-students">
+                    👥 Học sinh & Lộ trình (${cls.student_count})
+                </button>
+                <button class="classroom-tab-btn" data-tab="assignments" id="tab-teacher-assignments">
+                    📝 Giao bài & Quản lý (${cls.assignment_count})
+                </button>
+                <button class="classroom-tab-btn" data-tab="live" id="tab-teacher-live">
+                    ⚡ Hoạt động trực tiếp
+                </button>
+            </div>
+
+            <!-- Tab Content Pane -->
+            <div id="teacher-tab-content">
+                <!-- Populated by tab selection -->
+            </div>
+        `;
+
+        document.getElementById('btn-copy-code').addEventListener('click', () => {
+            navigator.clipboard.writeText(cls.class_code);
+            showToast(`📋 Đã sao chép mã lớp: ${cls.class_code}`);
+        });
+
+        const tabStudents = document.getElementById('tab-teacher-students');
+        const tabAssignments = document.getElementById('tab-teacher-assignments');
+        const tabLive = document.getElementById('tab-teacher-live');
+
+        tabStudents.addEventListener('click', () => {
+            setTeacherActiveTab(tabStudents);
+            loadTeacherStudentsPane();
+        });
+        tabAssignments.addEventListener('click', () => {
+            setTeacherActiveTab(tabAssignments);
+            loadTeacherAssignmentsPane(cls);
+        });
+        tabLive.addEventListener('click', () => {
+            setTeacherActiveTab(tabLive);
+            loadTeacherLivePane();
+        });
+
+        // Default open students pane
+        loadTeacherStudentsPane();
+
+    } catch (e) {
+        body.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi tải dữ liệu lớp học: ${e.message}</div>`;
+    }
+}
+
+async function handleCreateClass() {
+    const className = document.getElementById('new-class-name').value.trim();
+    const classCode = document.getElementById('new-class-code').value.trim();
+
+    if (!className) {
+        alert("Vui lòng nhập tên lớp học.");
+        return;
+    }
+
+    try {
+        const payload = { class_name: className };
+        if (classCode) payload.class_code = classCode;
+        await apiPost('/api/classroom/teacher/class', payload);
+        showToast('🎉 Tạo lớp học thành công!');
+        openClassroomModal();
+    } catch (e) {
+        alert("Lỗi tạo lớp học: " + e.message);
+    }
+}
+
+async function loadTeacherStudentsPane() {
+    const pane = document.getElementById('teacher-tab-content');
+    pane.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);">⏳ Đang tải danh sách học sinh & tiến độ...</div>';
+    try {
+        const res = await apiGet('/api/classroom/teacher/students');
+        const students = res.students || [];
+
+        if (students.length === 0) {
+            pane.innerHTML = `
+                <div class="folder-placeholder" style="padding: 40px; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">👥</div>
+                    <h4>Chưa có học sinh nào tham gia lớp</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">
+                        Hãy gửi mã lớp cho các em học sinh. Khi các em nhập mã trên tài khoản học sinh, danh sách và tiến độ sẽ hiển thị tại đây!
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        pane.innerHTML = `
+            <div class="classroom-table-wrap">
+                <table class="classroom-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Họ và tên</th>
+                            <th>Email</th>
+                            <th>Ngày vào lớp</th>
+                            <th>Tiến độ 8 chặng HSG</th>
+                            <th>Lượt nộp bài</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacher-students-tbody">
+                        ${students.map((st, i) => {
+                            const totalProblems = 24; // 8 chặng x 3 bài
+                            const percent = Math.min(100, Math.round((st.completed_count / totalProblems) * 100));
+                            return `
+                                <tr>
+                                    <td>${i + 1}</td>
+                                    <td style="font-weight: 600; color: var(--text-primary);">${escapeHtml(st.full_name)}</td>
+                                    <td>${escapeHtml(st.email)}</td>
+                                    <td>${new Date(st.joined_at).toLocaleDateString('vi-VN')}</td>
+                                    <td>
+                                        <div class="student-progress-bar-wrap" title="Hoàn thành ${st.completed_count}/${totalProblems} bài tập">
+                                            <div class="student-progress-bar-track">
+                                                <div class="student-progress-bar-fill" style="width: ${percent}%;"></div>
+                                            </div>
+                                            <span class="student-progress-text">${percent}% (${st.completed_count}/${totalProblems})</span>
+                                        </div>
+                                    </td>
+                                    <td>${st.total_submissions} lần</td>
+                                    <td>
+                                        <button class="btn-secondary" style="padding: 5px 12px; font-size: 0.82rem;" onclick="viewStudentDetail(${st.id}, '${escapeHtml(st.full_name)}', '${escapeHtml(st.email)}')">
+                                            👁️ Xem Lộ Trình & Bài Nộp
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (e) {
+        pane.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi tải học sinh: ${e.message}</div>`;
+    }
+}
+
+async function viewStudentDetail(studentId, name, email) {
+    document.getElementById('student-detail-name').textContent = `Học sinh: ${name}`;
+    document.getElementById('student-detail-meta').textContent = `Email: ${email} • Theo dõi chi tiết 8 chặng HSG và bài nộp`;
+    const body = document.getElementById('student-detail-body');
+    body.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);">⏳ Đang tải chi tiết lộ trình học sinh...</div>';
+    openModal('modal-student-detail');
+
+    try {
+        const res = await apiGet(`/api/classroom/teacher/student/${studentId}`);
+        const roadmap = res.roadmap;
+        const submissions = res.submissions || [];
+
+        // Build stages HTML
+        const stagesHtml = roadmap.stages.map(stg => {
+            const isCompleted = stg.completed === stg.total;
+            return `
+                <div class="stage-breakdown-card ${isCompleted ? 'completed' : ''}">
+                    <div class="stage-breakdown-header">
+                        <span>Chặng ${stg.id}: ${escapeHtml(stg.title)}</span>
+                        <span style="color: ${isCompleted ? '#10b981' : 'var(--text-muted)'};">${stg.completed}/${stg.total}</span>
+                    </div>
+                    <div class="stage-breakdown-problems">
+                        ${stg.problems.map(p => {
+                            let badge = '<span class="prob-badge-empty">⭕ Chưa làm</span>';
+                            if (p.completed) {
+                                badge = `<span class="prob-badge-ac">✅ AC (${p.best_score}/10)</span>`;
+                            } else if (p.attempts > 0) {
+                                badge = `<span class="prob-badge-wa">⚠️ WA (${p.best_score}/10)</span>`;
+                            }
+                            return `
+                                <div class="stage-prob-row">
+                                    <span>${escapeHtml(p.title)}</span>
+                                    ${badge}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Build submissions table
+        const subsTableHtml = submissions.length === 0
+            ? '<p style="color: var(--text-muted); padding: 10px;">Học sinh chưa nộp bài tập nào.</p>'
+            : `
+                <div class="classroom-table-wrap">
+                    <table class="classroom-table">
+                        <thead>
+                            <tr>
+                                <th>Thời gian</th>
+                                <th>Bài tập / Chặng</th>
+                                <th>Điểm số</th>
+                                <th>Trạng thái</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${submissions.map(sub => `
+                                <tr>
+                                    <td>${new Date(sub.submitted_at).toLocaleString('vi-VN')}</td>
+                                    <td style="font-weight: 600;">${escapeHtml(sub.problem_id)}</td>
+                                    <td><b>${sub.score}</b> / ${sub.total_tests}</td>
+                                    <td>
+                                        <span class="difficulty-badge ${sub.status === 'AC' ? 'easy' : 'hard'}" style="padding: 2px 8px; font-size: 0.75rem;">
+                                            ${sub.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="viewSubmissionDetail('${escapeHtml(name)}', '${escapeHtml(sub.problem_id)}', ${JSON.stringify(sub.code || '').replace(/"/g, '&quot;')}, ${sub.score}, ${sub.total_tests}, '${sub.status}', ${JSON.stringify(sub.ai_feedback || '').replace(/"/g, '&quot;')}, '${sub.submitted_at}')">
+                                            🔍 Xem Code & AI
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+        body.innerHTML = `
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;">
+                <h4 style="margin: 0; color: #10b981;">📊 Tổng quan tiến độ lộ trình HSG:</h4>
+                <p style="margin: 4px 0 0; font-size: 0.9rem; color: var(--text-secondary);">
+                    Đã hoàn thành <b>${roadmap.completed_problems} / ${roadmap.total_problems}</b> bài tập (${Math.round((roadmap.completed_problems / roadmap.total_problems) * 100)}%) qua ${roadmap.completed_stages} / ${roadmap.total_stages} chặng học tập.
+                </p>
+            </div>
+
+            <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--text-primary);">📖 Chi Tiết 8 Chặng Lộ Trình:</h3>
+            <div class="stages-grid-breakdown">
+                ${stagesHtml}
+            </div>
+
+            <h3 style="font-size: 1.1rem; margin-top: 20px; margin-bottom: 12px; color: var(--text-primary);">📝 Lịch Sử Nộp Bài & Nhận Xét AI:</h3>
+            ${subsTableHtml}
+        `;
+
+    } catch (e) {
+        body.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+async function loadTeacherAssignmentsPane(cls) {
+    const pane = document.getElementById('teacher-tab-content');
+    pane.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);">⏳ Đang tải danh sách bài tập đã giao...</div>';
+
+    try {
+        const res = await apiGet('/api/classroom/teacher/assignments');
+        const assignments = res.assignments || [];
+
+        pane.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">Bài tập đã giao cho lớp (${assignments.length})</h3>
+                <button class="btn-primary" id="btn-toggle-create-assignment" style="width:auto; padding:8px 18px; margin:0;">
+                    ➕ Giao Bài Tập Mới
+                </button>
+            </div>
+
+            <!-- Form tạo bài tập mới (toggleable) -->
+            <div class="create-assignment-box hidden" id="box-create-assignment">
+                <h3 style="margin:0 0 14px; color:var(--accent-secondary); font-size:1.1rem;">📝 Giao Bài Tập Mới Cho Lớp</h3>
+                <div class="form-group">
+                    <label>Tiêu đề bài tập *</label>
+                    <input type="text" id="asg-title" placeholder="Ví dụ: Đếm số lượng số nguyên tố trong dãy số">
+                </div>
+                <div class="form-group">
+                    <label>Đề bài chi tiết (Hỗ trợ Markdown & Math) *</label>
+                    <textarea id="asg-desc" style="width:100%; min-height:100px; background:var(--bg-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-primary); padding:10px;" placeholder="Mô tả đề bài, giới hạn dữ liệu (N <= 10^5)..."></textarea>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div class="form-group">
+                        <label>Giới hạn thời gian (giây) *</label>
+                        <input type="number" id="asg-time-limit" value="1.0" step="0.5" min="0.5" max="5.0">
+                    </div>
+                    <div class="form-group">
+                        <label>Hạn nộp (Không bắt buộc)</label>
+                        <input type="datetime-local" id="asg-deadline">
+                    </div>
+                </div>
+
+                <div style="margin: 16px 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label style="font-weight:600; color:var(--text-secondary);">Bộ Test Cases Chấm Điểm *</label>
+                        <button type="button" class="btn-secondary" id="btn-add-testcase" style="padding:4px 10px; font-size:0.8rem;">+ Thêm Test Case</button>
+                    </div>
+                    <div id="test-cases-container">
+                        <div class="test-case-item" data-idx="0">
+                            <div class="test-case-grid">
+                                <div>
+                                    <small style="color:var(--text-muted); display:block; margin-bottom:4px;">Input (Đầu vào):</small>
+                                    <textarea class="tc-input" placeholder="Ví dụ: 5\n1 2 3 4 5"></textarea>
+                                </div>
+                                <div>
+                                    <small style="color:var(--text-muted); display:block; margin-bottom:4px;">Expected Output (Đầu ra kỳ vọng):</small>
+                                    <textarea class="tc-output" placeholder="Ví dụ: 3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:16px;">
+                    <button class="btn-primary" id="btn-submit-create-assignment" style="flex:1;">🚀 Giao Cho Cả Lớp</button>
+                    <button class="btn-secondary" id="btn-cancel-create-assignment" style="flex:none; padding:10px 20px;">Hủy</button>
+                </div>
+            </div>
+
+            <!-- Danh sách bài tập -->
+            <div class="assignments-list-container" id="teacher-assignments-list">
+                ${assignments.length === 0 ? `
+                    <div class="folder-placeholder" style="padding:30px; text-align:center;">
+                        Chưa có bài tập nào được giao. Hãy nhấn nút <b>➕ Giao Bài Tập Mới</b> ở trên để tạo bài!
+                    </div>
+                ` : assignments.map(a => {
+                    const isExpired = a.deadline && new Date(a.deadline) < new Date();
+                    const deadlineBadge = a.deadline 
+                        ? `<span class="deadline-badge ${isExpired ? 'deadline-expired' : 'deadline-active'}">
+                            ${isExpired ? 'Đã hết hạn' : 'Hạn: ' + new Date(a.deadline).toLocaleString('vi-VN')}
+                           </span>`
+                        : `<span class="deadline-badge deadline-active">Không giới hạn thời gian</span>`;
+
+                    return `
+                        <div class="assignment-card">
+                            <div class="assignment-main-info">
+                                <div class="assignment-card-title">
+                                    <span>${escapeHtml(a.title)}</span>
+                                    ${deadlineBadge}
+                                </div>
+                                <div class="assignment-meta-row">
+                                    <span>⏱️ Giới hạn: ${a.time_limit || 1.0}s</span>
+                                    <span>🧪 ${a.test_case_count || 'Nhiều'} Test cases</span>
+                                    <span style="color:#10b981; font-weight:600;">📊 Đã nộp: ${a.submission_count} học sinh</span>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn-secondary" style="padding:6px 14px; font-size:0.85rem;" onclick="viewAssignmentSubmissions(${a.id}, '${escapeHtml(a.title)}')">
+                                    📊 Xem Bài Nộp
+                                </button>
+                                <button class="btn-danger" style="padding:6px 12px; font-size:0.85rem;" onclick="deleteAssignment(${a.id}, '${escapeHtml(a.title)}')">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+
+        // Wire Create Form Events
+        const boxCreate = document.getElementById('box-create-assignment');
+        const btnToggle = document.getElementById('btn-toggle-create-assignment');
+        const btnCancel = document.getElementById('btn-cancel-create-assignment');
+        const btnAddTc = document.getElementById('btn-add-testcase');
+        const btnSubmitAsg = document.getElementById('btn-submit-create-assignment');
+
+        btnToggle.addEventListener('click', () => boxCreate.classList.toggle('hidden'));
+        btnCancel.addEventListener('click', () => boxCreate.classList.add('hidden'));
+
+        btnAddTc.addEventListener('click', () => {
+            const container = document.getElementById('test-cases-container');
+            const item = document.createElement('div');
+            item.className = 'test-case-item';
+            item.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span style="font-size:0.8rem; color:var(--text-muted);">Test case tiếp theo:</span>
+                    <button type="button" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.8rem;" onclick="this.closest('.test-case-item').remove()">Xóa test</button>
+                </div>
+                <div class="test-case-grid">
+                    <div>
+                        <textarea class="tc-input" placeholder="Input..."></textarea>
+                    </div>
+                    <div>
+                        <textarea class="tc-output" placeholder="Expected Output..."></textarea>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+
+        btnSubmitAsg.addEventListener('click', () => submitCreateAssignment(cls));
+
+    } catch (e) {
+        pane.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+async function submitCreateAssignment(cls) {
+    const title = document.getElementById('asg-title').value.trim();
+    const description = document.getElementById('asg-desc').value.trim();
+    const time_limit = parseFloat(document.getElementById('asg-time-limit').value) || 1.0;
+    const deadline = document.getElementById('asg-deadline').value || null;
+
+    if (!title || !description) {
+        alert("Vui lòng nhập tiêu đề và đề bài.");
+        return;
+    }
+
+    const test_cases = [];
+    document.querySelectorAll('#test-cases-container .test-case-item').forEach(item => {
+        const inp = item.querySelector('.tc-input').value;
+        const out = item.querySelector('.tc-output').value;
+        if (inp.trim() || out.trim()) {
+            test_cases.push({ input: inp, expected_output: out });
+        }
+    });
+
+    if (test_cases.length === 0) {
+        alert("Vui lòng nhập ít nhất 1 test case để chấm bài.");
+        return;
+    }
+
+    try {
+        await apiPost('/api/classroom/teacher/assignments', {
+            title,
+            description,
+            time_limit,
+            deadline,
+            test_cases
+        });
+        showToast('🎉 Đã giao bài tập thành công cho cả lớp!');
+        loadTeacherAssignmentsPane(cls);
+        renderSidebar();
+    } catch (e) {
+        alert("Lỗi giao bài tập: " + e.message);
+    }
+}
+
+async function viewAssignmentSubmissions(assignmentId, title) {
+    document.getElementById('student-detail-name').textContent = `Bài nộp: ${title}`;
+    document.getElementById('student-detail-meta').textContent = `Danh sách học sinh đã nộp bài tập này`;
+    const body = document.getElementById('student-detail-body');
+    body.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);">⏳ Đang tải bài nộp của học sinh...</div>';
+    openModal('modal-student-detail');
+
+    try {
+        const res = await apiGet(`/api/classroom/teacher/assignment/${assignmentId}/submissions`);
+        const submissions = res.submissions || [];
+
+        if (submissions.length === 0) {
+            body.innerHTML = `
+                <div class="folder-placeholder" style="padding: 40px; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">📝</div>
+                    <h4>Chưa có học sinh nào nộp bài tập này</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Các bài nộp của học sinh kèm theo điểm số và code sẽ hiển thị tại đây ngay khi các em nộp.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        body.innerHTML = `
+            <div class="classroom-table-wrap">
+                <table class="classroom-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Học sinh</th>
+                            <th>Thời gian nộp</th>
+                            <th>Điểm số</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${submissions.map((sub, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td style="font-weight: 600; color: var(--text-primary);">${escapeHtml(sub.student_name)}</td>
+                                <td>${new Date(sub.submitted_at).toLocaleString('vi-VN')}</td>
+                                <td><b>${sub.score}</b> / ${sub.total_tests}</td>
+                                <td>
+                                    <span class="difficulty-badge ${sub.status === 'AC' ? 'easy' : 'hard'}" style="padding: 2px 8px; font-size: 0.75rem;">
+                                        ${sub.status}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn-secondary" style="padding: 4px 12px; font-size: 0.8rem;" onclick="viewSubmissionDetail('${escapeHtml(sub.student_name)}', '${escapeHtml(title)}', ${JSON.stringify(sub.code || '').replace(/"/g, '&quot;')}, ${sub.score}, ${sub.total_tests}, '${sub.status}', ${JSON.stringify(sub.ai_feedback || '').replace(/"/g, '&quot;')}, '${sub.submitted_at}')">
+                                        🔍 Xem Code & AI
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (e) {
+        body.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+async function deleteAssignment(assignmentId, title) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa bài tập "${title}"? Toàn bộ bài nộp của học sinh cho bài này cũng sẽ bị xóa.`)) {
+        return;
+    }
+    try {
+        await apiDelete(`/api/classroom/teacher/assignment/${assignmentId}`);
+        showToast('🗑️ Đã xóa bài tập thành công');
+        const res = await apiGet('/api/classroom/teacher/class');
+        if (res.has_class) {
+            loadTeacherAssignmentsPane(res.class);
+        }
+        renderSidebar();
+    } catch (e) {
+        alert("Lỗi khi xóa bài: " + e.message);
+    }
+}
+
+async function loadTeacherLivePane() {
+    const pane = document.getElementById('teacher-tab-content');
+    pane.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);">⏳ Đang tải hoạt động trực tiếp...</div>';
+    try {
+        const res = await apiGet('/api/classroom/teacher/live-feed');
+        const feed = res.feed || [];
+
+        if (feed.length === 0) {
+            pane.innerHTML = `
+                <div class="folder-placeholder" style="padding: 40px; text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">⚡</div>
+                    <h4>Chưa có hoạt động mới</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Hoạt động nộp bài và làm bài của học sinh trong lớp sẽ xuất hiện theo thời gian thực tại đây.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        pane.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                ${feed.map(item => `
+                    <div class="assignment-card" style="padding:12px 18px;">
+                        <div class="assignment-main-info">
+                            <div style="font-weight:600; color:var(--text-primary); font-size:0.95rem;">
+                                👤 <b>${escapeHtml(item.student_name)}</b> vừa nộp bài <b>${escapeHtml(item.problem_id)}</b>
+                            </div>
+                            <div class="assignment-meta-row" style="margin-top:4px;">
+                                <span>Kết quả: <b>${item.score}/${item.total_tests}</b></span>
+                                <span class="difficulty-badge ${item.status === 'AC' ? 'easy' : 'hard'}" style="padding:1px 6px; font-size:0.75rem;">${item.status}</span>
+                                <span>🕒 ${new Date(item.submitted_at).toLocaleString('vi-VN')}</span>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" style="padding:4px 10px; font-size:0.8rem;" onclick="viewSubmissionDetail('${escapeHtml(item.student_name)}', '${escapeHtml(item.problem_id)}', ${JSON.stringify(item.code || '').replace(/"/g, '&quot;')}, ${item.score}, ${item.total_tests}, '${item.status}', ${JSON.stringify(item.ai_feedback || '').replace(/"/g, '&quot;')}, '${item.submitted_at}')">
+                            🔍 Xem Code & AI
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } catch (e) {
+        pane.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+// ---- STUDENT CLASSROOM WORKSPACE ----
+
+async function renderStudentClassroom(body) {
+    try {
+        const res = await apiGet('/api/classroom/student/my-class');
+        if (!res.has_class) {
+            body.innerHTML = `
+                <div class="student-join-hero">
+                    <div class="hero-icon">🏫</div>
+                    <h2 style="font-size: 1.4rem; color: var(--text-primary); margin-bottom: 8px;">Tham Gia Lớp Học Của Bạn</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">
+                        Nhập mã lớp do Thầy/Cô cung cấp (Ví dụ: <code>HSG839</code>, <code>TIN12A</code>) để nhận bài tập riêng và được AI Mentor cùng Thầy Cô đồng hành!
+                    </p>
+                    <div class="form-group">
+                        <input type="text" id="input-join-class-code" class="class-code-input-lg" placeholder="HSG..." maxlength="10">
+                    </div>
+                    <button class="btn-primary" id="btn-submit-join-class" style="padding: 14px; font-size: 1rem;">
+                        🚀 Vào Lớp Học Ngay
+                    </button>
+                </div>
+            `;
+            document.getElementById('btn-submit-join-class').addEventListener('click', handleJoinClass);
+            return;
+        }
+
+        const cls = res.class;
+        studentClass = cls;
+
+        body.innerHTML = `
+            <div class="class-banner-card">
+                <div class="class-banner-top">
+                    <div>
+                        <div class="class-title-tag">
+                            <span>🏫 ${escapeHtml(cls.class_name)}</span>
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
+                            👨‍🏫 Giáo viên phụ trách: <b style="color: #fff;">${escapeHtml(cls.teacher_name)}</b>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="class-code-badge-wrap" title="Mã lớp">
+                            <span style="font-size:0.85rem; color:var(--text-muted);">Mã lớp:</span>
+                            <span class="class-code-text">${cls.class_code}</span>
+                        </div>
+                        <button class="btn-danger" id="btn-leave-class" style="padding:6px 12px; font-size:0.8rem;" title="Rời khỏi lớp học này">
+                            Rời lớp
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <h3 style="font-size: 1.15rem; color: var(--text-primary); margin-bottom: 14px;">
+                    📝 Bài Tập Được Giáo Viên Giao Cho Lớp
+                </h3>
+                <div class="assignments-list-container" id="student-assignments-list">
+                    <div style="text-align:center; padding: 20px; color: var(--text-muted);">⏳ Đang tải bài tập...</div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('btn-leave-class').addEventListener('click', handleLeaveClass);
+
+        // Load assignments
+        loadStudentAssignmentsList();
+
+    } catch (e) {
+        body.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi tải lớp học: ${e.message}</div>`;
+    }
+}
+
+async function loadStudentAssignmentsList() {
+    const container = document.getElementById('student-assignments-list');
+    try {
+        const res = await apiGet('/api/classroom/student/assignments');
+        const assignments = res.assignments || [];
+
+        if (assignments.length === 0) {
+            container.innerHTML = `
+                <div class="folder-placeholder" style="padding: 30px; text-align: center;">
+                    🎉 Hiện tại Thầy/Cô chưa giao bài tập mới nào. Hãy tiếp tục luyện thi 8 chặng HSG nhé!
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = assignments.map(a => {
+            const isAc = a.has_submitted && a.status === 'AC';
+            const isWa = a.has_submitted && a.status !== 'AC';
+            const isExpired = a.deadline && new Date(a.deadline) < new Date();
+
+            let statusHtml = '<span style="color:var(--text-muted);">⭕ Chưa làm</span>';
+            if (isAc) {
+                statusHtml = `<span style="color:#10b981; font-weight:700;">✅ Đã nộp: ${a.score}/${a.total_tests} AC</span>`;
+            } else if (isWa) {
+                statusHtml = `<span style="color:#f59e0b; font-weight:700;">⚠️ Đã nộp: ${a.score}/${a.total_tests} (Chưa hoàn thành)</span>`;
+            }
+
+            const deadlineBadge = a.deadline 
+                ? `<span class="deadline-badge ${isExpired ? 'deadline-expired' : 'deadline-active'}">
+                    ${isExpired ? 'Đã hết hạn' : 'Hạn: ' + new Date(a.deadline).toLocaleString('vi-VN')}
+                   </span>`
+                : `<span class="deadline-badge deadline-active">Không giới hạn</span>`;
+
+            return `
+                <div class="assignment-card">
+                    <div class="assignment-main-info">
+                        <div class="assignment-card-title">
+                            <span>${escapeHtml(a.title)}</span>
+                            ${deadlineBadge}
+                        </div>
+                        <div class="assignment-meta-row">
+                            <span>${statusHtml}</span>
+                            <span>⏱️ ${a.time_limit || 1.0}s/test</span>
+                            <span>🧪 ${a.test_case_count || 1} Tests</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary" style="width:auto; padding:8px 20px; margin:0;" onclick="openAssignmentProblem(${JSON.stringify(a).replace(/"/g, '&quot;')})">
+                        🚀 Làm Bài Ngay
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        container.innerHTML = `<div style="color: #ef4444; padding: 15px;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+async function handleJoinClass() {
+    const input = document.getElementById('input-join-class-code');
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+        alert("Vui lòng nhập mã lớp.");
+        return;
+    }
+
+    try {
+        await apiPost('/api/classroom/student/join', { class_code: code });
+        showToast('🎉 Đã tham gia lớp học thành công!');
+        openClassroomModal();
+        renderSidebar();
+    } catch (e) {
+        alert("Lỗi tham gia lớp: " + e.message);
+    }
+}
+
+async function handleLeaveClass() {
+    if (!confirm("Bạn có chắc chắn muốn rời khỏi lớp học này?")) return;
+    try {
+        await apiPost('/api/classroom/student/leave', {});
+        showToast('Đã rời khỏi lớp học.');
+        openClassroomModal();
+        renderSidebar();
+    } catch (e) {
+        alert("Lỗi: " + e.message);
+    }
+}
+
+// ---- CODE & AI MENTOR INSPECTION MODAL ----
+
+function viewSubmissionDetail(studentName, problemId, code, score, totalTests, status, aiFeedback, submittedAt) {
+    document.getElementById('submission-viewer-title').textContent = `Bài nộp: ${problemId}`;
+    document.getElementById('submission-viewer-meta').textContent = `Học sinh: ${studentName} • Điểm: ${score}/${totalTests} (${status}) • Lúc: ${new Date(submittedAt).toLocaleString('vi-VN')}`;
+    const body = document.getElementById('submission-viewer-body');
+
+    body.innerHTML = `
+        <div style="margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;">
+            <h4 style="margin:0; color:var(--text-primary); font-size:0.95rem;">💻 Mã nguồn (Code) đã nộp:</h4>
+        </div>
+        <div class="code-viewer-box">
+            <button class="copy-code-float-btn" id="btn-copy-submitted-code">Sao chép</button>
+            <code>${escapeHtml(code || '')}</code>
+        </div>
+
+        <h4 style="margin:20px 0 8px; color:var(--accent-secondary); font-size:0.95rem;">🤖 Nhận xét từ AI Mentor:</h4>
+        <div class="ai-critique-box">
+            ${aiFeedback ? renderMarkdown(aiFeedback) : '<p style="color:var(--text-muted);margin:0;">Chưa có nhận xét từ AI cho bài này.</p>'}
+        </div>
+    `;
+
+    document.getElementById('btn-copy-submitted-code').addEventListener('click', () => {
+        navigator.clipboard.writeText(code || '');
+        showToast('📋 Đã sao chép mã nguồn!');
+    });
+
+    renderMath(body);
+    openModal('modal-submission-detail');
 }
