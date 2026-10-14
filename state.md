@@ -1,6 +1,11 @@
 - **Đã hoàn thành:** 
-  1. Đổi giao diện mặc định: Khi vừa truy cập web (hoặc F5), trang web sẽ luôn hiển thị màn hình Lộ trình tổng quan (Hub) với 4 mục ôn tập thay vì vào thẳng màn hình làm bài / màn hình chào.
-  2. Cập nhật tiêu đề phù hợp toàn diện: Đổi từ **"Lộ trình Học Tập Python"** thành **"📖 Lộ Trình Học Tập & Ôn Luyện Tin Học"** kèm phụ đề *"Từ con số 0 → Tự tin chinh phục mọi kỳ thi (HSG, THPT Quốc Gia & Bài tập trên lớp)"* để bao quát chuẩn xác cả 4 mục: 🏆 Ôn HSG, 📑 Ôn TN THPT QGia, 📋 Luyện Đề, 🖊️ BTap GV giao.
-  3. Tích hợp chuyển trang qua logo **TDat**: Thêm hiệu ứng hover đẹp mắt, trỏ chuột dạng pointer; khi click vào chữ **TDat** ở góc trên cùng bên trái sẽ tự động quay trở về giao diện mặc định này và cuộn mượt lên đầu trang.
+  1. Tái cấu trúc mục **🏆 Ôn HSG**:
+     - Gom toàn bộ 8 chặng thành mục nhỏ mang tên **`📖 Lí Thuyết`**: Nhấn vào bất kỳ chặng nào sẽ mở ngay lý thuyết chuyên sâu và Góc Vũ Khí Python của chặng đó.
+     - Thêm mục nhỏ bên dưới mang tên **`📝 Bài tập`**: Gom toàn bộ 8 chặng bài tập (24 bài rèn luyện thuật toán, chấm 10 test tự động kèm AI Mentor).
+  2. Bỏ hoàn toàn mục lớn **`📋 Luyện Đề`** ở cả Sidebar và giao diện Lộ Trình (Roadmap).
+  3. Cập nhật hệ thống giao diện đồng bộ: Danh sách mục lớn hiện tại gồm 3 phần gọn gàng:
+     - 🏆 **Ôn HSG** (📖 Lí Thuyết & 📝 Bài tập)
+     - 📑 **Ôn TN THPT QGia**
+     - 🖊️ **BTap GV giao**
 - **Đang làm dở:** Không.
-- **Bước tiếp theo:** Người dùng hãy nhấn F5 hoặc tải lại trang web để trải nghiệm.
+- **Bước tiếp theo:** Người dùng nhấn F5 (hoặc Ctrl+F5) trên trình duyệt để kiểm tra cấu trúc sidebar mới.
