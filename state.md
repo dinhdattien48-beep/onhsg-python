@@ -1,6 +1,6 @@
 - **Đã hoàn thành:** 
-  1. Tạo 8 bài tập thực hành SQL (truy vấn dữ liệu từ bảng HOC_SINH và DIEM_THI) và đưa vào tab **Đề bài** của Chuyên đề 3.
-  2. Xử lý hệ thống backend chấm điểm dành riêng cho bài tập SQL: Khi người dùng bấm **"Nộp bài"**, hệ thống sẽ tự động gửi toàn bộ các câu SQL sang cho **AI Mentor** đọc, không cần chạy qua test case Python như bên Ôn HSG.
-  3. Giao diện sau khi nộp bài: Sẽ hiển thị thông báo "✅ Hệ thống đã tiếp nhận SQL" và tự động chuyển thẳng sang tab **AI Mentor** để học sinh đọc nhận xét chi tiết và xem mình bị sai cú pháp hay logic ở đâu.
+  1. Đổi giao diện mặc định: Khi vừa truy cập web (hoặc F5), trang web sẽ luôn hiển thị màn hình Lộ trình tổng quan (Hub) với 4 mục ôn tập thay vì vào thẳng màn hình làm bài / màn hình chào.
+  2. Cập nhật tiêu đề phù hợp toàn diện: Đổi từ **"Lộ trình Học Tập Python"** thành **"📖 Lộ Trình Học Tập & Ôn Luyện Tin Học"** kèm phụ đề *"Từ con số 0 → Tự tin chinh phục mọi kỳ thi (HSG, THPT Quốc Gia & Bài tập trên lớp)"* để bao quát chuẩn xác cả 4 mục: 🏆 Ôn HSG, 📑 Ôn TN THPT QGia, 📋 Luyện Đề, 🖊️ BTap GV giao.
+  3. Tích hợp chuyển trang qua logo **TDat**: Thêm hiệu ứng hover đẹp mắt, trỏ chuột dạng pointer; khi click vào chữ **TDat** ở góc trên cùng bên trái sẽ tự động quay trở về giao diện mặc định này và cuộn mượt lên đầu trang.
 - **Đang làm dở:** Không.
-- **Bước tiếp theo:** Người dùng hãy reload lại trang (F5) và thử gõ một vài lệnh SQL rồi bấm nộp bài để xem AI Mentor nhận xét thế nào.
+- **Bước tiếp theo:** Người dùng hãy nhấn F5 hoặc tải lại trang web để trải nghiệm.
