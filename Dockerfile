@@ -4,7 +4,10 @@ FROM python:3.12-slim
 # Thiết lập các biến môi trường chuẩn
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=7860
+    PORT=7860 \
+    SMTP_EMAIL=tdat28409@gmail.com \
+    SMTP_APP_PASSWORD=uwtklxhzafjqqkcl \
+    JWT_SECRET=supper_secret_key_onhsg_123!
 
 WORKDIR /app
 

@@ -15,8 +15,8 @@ services:
       - key: PORT
         value: 10000
       - key: JWT_SECRET
-        generateValue: true
+        value: supper_secret_key_onhsg_123!
       - key: SMTP_EMAIL
-        sync: false
+        value: tdat28409@gmail.com
       - key: SMTP_APP_PASSWORD
-        sync: false
+        value: uwtklxhzafjqqkcl

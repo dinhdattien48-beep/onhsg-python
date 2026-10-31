@@ -15,16 +15,20 @@ from database import get_connection
 from dotenv import load_dotenv
 load_dotenv()
 
+DEFAULT_SMTP_EMAIL = "tdat28409@gmail.com"
+DEFAULT_SMTP_APP_PASSWORD = "uwtklxhzafjqqkcl"
+DEFAULT_JWT_SECRET = "supper_secret_key_onhsg_123!"
+
 # === Cấu hình Auth & JWT ===
-SECRET_KEY = os.environ.get("JWT_SECRET", "default_secret_key_if_not_set")
+SECRET_KEY = os.environ.get("JWT_SECRET", "").strip() or DEFAULT_JWT_SECRET
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
 # === Cấu hình Mail ===
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
-SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
-SMTP_APP_PASSWORD = os.environ.get("SMTP_APP_PASSWORD", "")
+SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "").strip() or DEFAULT_SMTP_EMAIL
+SMTP_APP_PASSWORD = os.environ.get("SMTP_APP_PASSWORD", "").strip() or DEFAULT_SMTP_APP_PASSWORD
 
 auth_router = APIRouter(prefix="/api/auth", tags=["auth"])
 admin_router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -69,8 +73,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def send_email_otp(to_email: str, otp: str):
-    email_sender = os.environ.get("SMTP_EMAIL", "").strip() or SMTP_EMAIL
-    pwd = os.environ.get("SMTP_APP_PASSWORD", "").strip() or SMTP_APP_PASSWORD
+    email_sender = os.environ.get("SMTP_EMAIL", "").strip() or SMTP_EMAIL or DEFAULT_SMTP_EMAIL
+    pwd = os.environ.get("SMTP_APP_PASSWORD", "").strip() or SMTP_APP_PASSWORD or DEFAULT_SMTP_APP_PASSWORD
     if not email_sender or not pwd:
         raise Exception("Chưa cấu hình SMTP_EMAIL hoặc SMTP_APP_PASSWORD trong .env hoặc Environment Variables")
     
@@ -79,7 +83,7 @@ def send_email_otp(to_email: str, otp: str):
     msg['From'] = email_sender
     msg['To'] = to_email
 
-    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=15)
     server.login(email_sender, pwd)
     server.send_message(msg)
     server.quit()
