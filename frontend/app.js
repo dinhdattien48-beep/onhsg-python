@@ -404,19 +404,21 @@ function renderSidebar() {
     // Lưu lại trạng thái các folder / subfolder mà người dùng đã tự tay bấm mở
     const openLabels = new Set();
     container.querySelectorAll('.folder-header.open, .subfolder-header.open').forEach(el => {
-        const text = el.querySelector('.folder-label, .subfolder-label')?.textContent?.trim();
+        const text = el.dataset.folderKey || el.querySelector('.folder-label, .subfolder-label')?.textContent?.trim();
         if (text) openLabels.add(text);
     });
 
     container.innerHTML = '';
 
     // ---- Helper: tạo folder Level-1 ----
-    function makeFolder({ icon, label, defaultOpen = false, content }) {
+    function makeFolder({ icon, label, key, defaultOpen = false, content }) {
         const group = document.createElement('div');
         group.className = 'folder-group';
 
-        const isOpen = openLabels.has(label) || defaultOpen;
+        const folderKey = key || label;
+        const isOpen = openLabels.has(folderKey) || openLabels.has(label) || defaultOpen;
         const header = document.createElement('button');
+        header.dataset.folderKey = folderKey;
         header.className = `folder-header${isOpen ? ' open' : ''}`;
         header.innerHTML = `
             <span class="folder-icon">${icon}</span>
@@ -439,12 +441,14 @@ function renderSidebar() {
     }
 
     // ---- Helper: tạo subfolder Level-2 (Lí Thuyết, Bài tập...) ----
-    function makeSubFolder(parentEl, { icon, label, defaultOpen = false, content }) {
+    function makeSubFolder(parentEl, { icon, label, key, defaultOpen = false, content }) {
         const subGroup = document.createElement('div');
         subGroup.className = 'subfolder-group';
 
-        const isOpen = openLabels.has(label) || defaultOpen;
+        const folderKey = key || label;
+        const isOpen = (key ? openLabels.has(folderKey) : openLabels.has(label)) || defaultOpen;
         const header = document.createElement('button');
+        header.dataset.folderKey = folderKey;
         header.className = `subfolder-header${isOpen ? ' open' : ''}`;
         header.innerHTML = `
             <span class="subfolder-icon">${icon}</span>
@@ -471,12 +475,14 @@ function renderSidebar() {
     makeFolder({
         icon: '🏆',
         label: 'Ôn HSG',
+        key: 'folder_hsg',
         defaultOpen: false,
         content(body) {
             // Mục nhỏ 1: Lí Thuyết (Mặc định ĐÓNG cho đến khi người dùng bấm mở)
             makeSubFolder(body, {
                 icon: '📖',
                 label: 'Lí Thuyết',
+                key: 'hsg_theory',
                 defaultOpen: false,
                 content(subBody) {
                     stagesData.forEach(stage => {
@@ -501,6 +507,7 @@ function renderSidebar() {
             makeSubFolder(body, {
                 icon: '📝',
                 label: 'Bài tập',
+                key: 'hsg_practice',
                 defaultOpen: false,
                 content(subBody) {
                     stagesData.forEach(stage => {
@@ -562,25 +569,36 @@ function renderSidebar() {
     makeFolder({
         icon: '📑',
         label: 'Ôn TN THPT QGia',
+        key: 'folder_thpt',
         defaultOpen: false,
         content(body) {
-            const topics = [
-                { id: "1", title: "1. Mạng máy tính" },
-                { id: "2", title: "2. Trí tuệ nhân tạo (AI)" },
-                { id: "3", title: "3. Cơ sở dữ liệu (CSDL)" },
-                { id: "4", title: "4. HTML & CSS" },
-                { id: "5", title: "5. Bảo mật & An toàn" }
-            ];
-            
-            topics.forEach(topic => {
-                const link = document.createElement('button');
-                link.className = `problem-link`;
-                link.innerHTML = `<span class="problem-status"></span> 📖 ${topic.title}`;
-                link.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectTHPTTheory(topic.id);
-                });
-                body.appendChild(link);
+            // Mục nhỏ 1: Lí Thuyết (Mặc định ĐÓNG giống ở phần Ôn HSG)
+            makeSubFolder(body, {
+                icon: '📖',
+                label: 'Lí Thuyết',
+                key: 'thpt_theory',
+                defaultOpen: false,
+                content(subBody) {
+                    const topics = [
+                        { id: "1", title: "1. Mạng máy tính" },
+                        { id: "2", title: "2. Trí tuệ nhân tạo (AI)" },
+                        { id: "3", title: "3. Cơ sở dữ liệu (CSDL)" },
+                        { id: "4", title: "4. HTML & CSS" },
+                        { id: "5", title: "5. Bảo mật & An toàn" }
+                    ];
+                    
+                    topics.forEach(topic => {
+                        const link = document.createElement('button');
+                        const isTopicActive = (currentStageId === 'thpt_' + topic.id && !document.getElementById('theory-content')?.classList.contains('hidden'));
+                        link.className = `problem-link ${isTopicActive ? 'active' : ''}`;
+                        link.innerHTML = `<span class="problem-status"></span> 📖 ${topic.title}`;
+                        link.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectTHPTTheory(topic.id);
+                        });
+                        subBody.appendChild(link);
+                    });
+                }
             });
         }
     });
@@ -1255,6 +1273,17 @@ function renderRoadmap() {
         label: 'Ôn TN THPT QGia',
         defaultOpen: false,
         content(body) {
+            const theorySec = document.createElement('div');
+            theorySec.className = 'roadmap-subsection';
+            theorySec.innerHTML = `
+                <div class="roadmap-subsection-header">
+                    <span class="rss-icon">📖</span>
+                    <span class="rss-title">Lí Thuyết</span>
+                    <span class="rss-desc">5 chuyên đề lý thuyết trọng tâm & bẫy trắc nghiệm</span>
+                </div>
+            `;
+            const theoryGrid = document.createElement('div');
+
             const topics = [
                 { id: "1", title: "Mạng máy tính và Internet" },
                 { id: "2", title: "Trí tuệ nhân tạo (AI) và Học máy" },
@@ -1273,8 +1302,10 @@ function renderRoadmap() {
                         <div class="stage-card-desc">Lý thuyết trọng tâm & bẫy trắc nghiệm</div>
                     </div>
                 `;
-                body.appendChild(stageEl);
+                theoryGrid.appendChild(stageEl);
             });
+            theorySec.appendChild(theoryGrid);
+            body.appendChild(theorySec);
         }
     });
 
