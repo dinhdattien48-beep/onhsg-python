@@ -12,6 +12,9 @@ import jwt
 
 from database import get_connection
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # === Cấu hình Auth & JWT ===
 SECRET_KEY = os.environ.get("JWT_SECRET", "default_secret_key_if_not_set")
 ALGORITHM = "HS256"
@@ -66,16 +69,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def send_email_otp(to_email: str, otp: str):
-    if not SMTP_EMAIL or not SMTP_APP_PASSWORD:
-        raise Exception("Chưa cấu hình SMTP_EMAIL hoặc SMTP_APP_PASSWORD trong .env")
+    email_sender = os.environ.get("SMTP_EMAIL", "").strip() or SMTP_EMAIL
+    pwd = os.environ.get("SMTP_APP_PASSWORD", "").strip() or SMTP_APP_PASSWORD
+    if not email_sender or not pwd:
+        raise Exception("Chưa cấu hình SMTP_EMAIL hoặc SMTP_APP_PASSWORD trong .env hoặc Environment Variables")
     
     msg = MIMEText(f"Mã xác thực OTP đăng ký tài khoản HSG Python của bạn là: {otp}\n\nMã này sẽ hết hạn sau 5 phút.")
     msg['Subject'] = 'Mã xác thực đăng ký HSG Python'
-    msg['From'] = SMTP_EMAIL
+    msg['From'] = email_sender
     msg['To'] = to_email
 
     server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
-    server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
+    server.login(email_sender, pwd)
     server.send_message(msg)
     server.quit()
 

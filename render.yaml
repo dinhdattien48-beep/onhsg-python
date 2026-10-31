@@ -14,3 +14,9 @@ services:
         value: gemini-3.8-flash
       - key: PORT
         value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_APP_PASSWORD
+        sync: false
