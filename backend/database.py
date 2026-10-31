@@ -178,6 +178,24 @@ def init_db():
     except Exception:
         pass
 
+    # Migration thêm hỗ trợ Đề thi Trắc nghiệm (chuẩn Azota)
+    try:
+        cursor.execute("ALTER TABLE class_assignments ADD COLUMN assignment_type TEXT DEFAULT 'code'")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE class_assignments ADD COLUMN quiz_data_json TEXT DEFAULT NULL")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE class_assignments ADD COLUMN duration_minutes INTEGER DEFAULT 45")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE assignment_submissions ADD COLUMN answers_json TEXT DEFAULT NULL")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 

@@ -9,15 +9,16 @@ import json
 import random
 import string
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from pydantic import BaseModel
 
 from database import get_connection, get_setting
 from auth import get_current_user
 from judge import judge_submission
 from ai_mentor import analyze_student_code
+from azota_parser import parse_azota_text, parse_azota_docx
 
 classroom_router = APIRouter(prefix="/api/classroom", tags=["classroom"])
 
@@ -48,10 +49,35 @@ class CreateAssignmentRequest(BaseModel):
     deadline: Optional[str] = None
 
 
+class ParseTextExamRequest(BaseModel):
+    text: str
+
+
+class QuizQuestionModel(BaseModel):
+    id: int
+    question: str
+    options: List[str]
+    answer: Optional[int] = 0
+    explanation: Optional[str] = ""
+
+
+class CreateQuizAssignmentRequest(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    duration_minutes: Optional[int] = 45
+    deadline: Optional[str] = None
+    questions: List[QuizQuestionModel]
+
+
 class SubmitAssignmentRequest(BaseModel):
     code: str
     api_key: Optional[str] = None
     model_name: Optional[str] = None
+
+
+class SubmitQuizRequest(BaseModel):
+    answers: Dict[str, int]  # { "1": 0, "2": 3 }
+    time_spent_seconds: Optional[int] = 0
 
 
 # ============================================================================
@@ -334,6 +360,91 @@ async def create_assignment(req: CreateAssignmentRequest, teacher: dict = Depend
     }
 
 
+@classroom_router.post("/teacher/parse-exam-text")
+async def parse_exam_from_text(req: ParseTextExamRequest, teacher: dict = Depends(require_teacher_or_owner)):
+    """Phân tích nội dung đề thi trắc nghiệm từ văn bản paste trực tiếp theo chuẩn Azota."""
+    raw_text = req.text.strip()
+    if not raw_text:
+        raise HTTPException(status_code=400, detail="Nội dung đề thi không được để trống.")
+    
+    parsed = parse_azota_text(raw_text)
+    if not parsed.get("questions"):
+        raise HTTPException(
+            status_code=400, 
+            detail="Không bóc tách được câu hỏi nào từ văn bản. Vui lòng kiểm tra định dạng câu (Ví dụ: Câu 1: ... A. ... B. ... C. ... D. ...)."
+        )
+    return parsed
+
+
+@classroom_router.post("/teacher/upload-exam-word")
+async def upload_exam_word(file: UploadFile = File(...), teacher: dict = Depends(require_teacher_or_owner)):
+    """Tải file Word (.docx) đề thi lên, hệ thống tự động nhận diện câu hỏi và đáp án gạch chân chuẩn Azota."""
+    filename = file.filename or ""
+    if not filename.lower().endswith(".docx"):
+        raise HTTPException(
+            status_code=400, 
+            detail="Chỉ hỗ trợ file Word định dạng .docx (Microsoft Word 2007 trở lên)."
+        )
+    
+    try:
+        content = await file.read()
+        parsed = parse_azota_docx(content)
+        if not parsed.get("success", True):
+            raise HTTPException(status_code=500, detail=parsed.get("error", "Lỗi phân tích file Word."))
+            
+        if not parsed.get("questions"):
+            raise HTTPException(
+                status_code=400, 
+                detail="Không tìm thấy câu hỏi trắc nghiệm hợp lệ trong file Word. Hãy đảm bảo đề thi có các câu bắt đầu bằng 'Câu 1:' và các lựa chọn A, B, C, D."
+            )
+        return parsed
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi đọc file Word: {str(e)}")
+
+
+@classroom_router.post("/teacher/assignments/quiz")
+async def create_quiz_assignment(req: CreateQuizAssignmentRequest, teacher: dict = Depends(require_teacher_or_owner)):
+    """Giáo viên xuất bản đề thi trắc nghiệm và giao cho cả lớp làm bài."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT id FROM classes WHERE teacher_id = ?", (teacher["id"],))
+    cls = cursor.fetchone()
+    if not cls:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Bạn chưa tạo lớp học. Hãy tạo lớp trước khi giao đề thi.")
+
+    class_id = cls["id"]
+    if not req.title.strip():
+        conn.close()
+        raise HTTPException(status_code=400, detail="Tiêu đề đề thi không được để trống.")
+
+    if not req.questions:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Đề thi cần có ít nhất 1 câu hỏi trắc nghiệm.")
+
+    quiz_json = json.dumps([q.dict() for q in req.questions], ensure_ascii=False)
+
+    cursor.execute("""
+        INSERT INTO class_assignments 
+        (class_id, teacher_id, title, description, time_limit, test_cases_json, deadline, assignment_type, quiz_data_json, duration_minutes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'quiz', ?, ?)
+    """, (class_id, teacher["id"], req.title.strip(), (req.description or "").strip(),
+          1.0, "[]", req.deadline, quiz_json, req.duration_minutes or 45))
+
+    assignment_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    return {
+        "message": f"🎉 Đã giao đề thi trắc nghiệm '{req.title}' ({len(req.questions)} câu) thành công cho lớp!",
+        "assignment_id": assignment_id,
+        "total_questions": len(req.questions)
+    }
+
+
 @classroom_router.get("/teacher/assignments")
 async def get_teacher_assignments(teacher: dict = Depends(require_teacher_or_owner)):
     """Lấy danh sách các bài tập giáo viên đã giao cho lớp."""
@@ -362,10 +473,19 @@ async def get_teacher_assignments(teacher: dict = Depends(require_teacher_or_own
     result = []
     for r in rows:
         d = dict(r)
-        try:
-            d["test_cases_count"] = len(json.loads(d["test_cases_json"]))
-        except Exception:
-            d["test_cases_count"] = 0
+        d["assignment_type"] = d.get("assignment_type") or "code"
+        if d["assignment_type"] == "quiz":
+            try:
+                q_list = json.loads(d.get("quiz_data_json") or "[]")
+                d["question_count"] = len(q_list)
+            except Exception:
+                d["question_count"] = 0
+            d["duration_minutes"] = d.get("duration_minutes") or 45
+        else:
+            try:
+                d["test_cases_count"] = len(json.loads(d.get("test_cases_json") or "[]"))
+            except Exception:
+                d["test_cases_count"] = 0
         result.append(d)
 
     return {"assignments": result}
@@ -379,7 +499,7 @@ async def get_assignment_submissions(assignment_id: int, teacher: dict = Depends
 
     # Kiểm tra assignment có thuộc lớp của giáo viên này không
     cursor.execute("""
-        SELECT ca.id, ca.title, ca.class_id
+        SELECT ca.id, ca.title, ca.class_id, ca.assignment_type, ca.quiz_data_json, ca.duration_minutes
         FROM class_assignments ca
         JOIN classes c ON ca.class_id = c.id
         WHERE ca.id = ? AND c.teacher_id = ?
@@ -391,7 +511,8 @@ async def get_assignment_submissions(assignment_id: int, teacher: dict = Depends
 
     cursor.execute("""
         SELECT sub.id, sub.student_id, sub.student_name, u.email as student_email,
-               sub.code, sub.score, sub.total_tests, sub.status, sub.ai_feedback, sub.submitted_at
+               sub.code, sub.score, sub.total_tests, sub.status, sub.ai_feedback, 
+               sub.answers_json, sub.results_json, sub.submitted_at
         FROM assignment_submissions sub
         JOIN users u ON sub.student_id = u.id
         WHERE sub.assignment_id = ?
@@ -400,8 +521,19 @@ async def get_assignment_submissions(assignment_id: int, teacher: dict = Depends
 
     rows = cursor.fetchall()
     conn.close()
+
+    parsed_quiz = None
+    if assign and assign["assignment_type"] == "quiz":
+        try:
+            parsed_quiz = json.loads(assign["quiz_data_json"] or "[]")
+        except Exception:
+            parsed_quiz = []
+
     return {
         "assignment_title": assign["title"] if assign else "Bài tập",
+        "assignment_type": assign["assignment_type"] if assign else "code",
+        "duration_minutes": assign["duration_minutes"] if assign else 45,
+        "quiz_data": parsed_quiz,
         "submissions": [dict(r) for r in rows]
     }
 
@@ -561,12 +693,15 @@ async def get_student_assignments(student: dict = Depends(get_current_user)):
     class_id = cm["class_id"]
     cursor.execute("""
         SELECT ca.id, ca.title, ca.description, ca.time_limit, ca.deadline, ca.created_at,
+               ca.assignment_type, ca.duration_minutes, ca.quiz_data_json,
             (SELECT MAX(score) FROM assignment_submissions WHERE assignment_id = ca.id AND student_id = ?) as best_score,
+            (SELECT total_tests FROM assignment_submissions WHERE assignment_id = ca.id AND student_id = ? ORDER BY submitted_at DESC LIMIT 1) as submission_total_tests,
+            (SELECT status FROM assignment_submissions WHERE assignment_id = ca.id AND student_id = ? ORDER BY submitted_at DESC LIMIT 1) as last_status,
             (SELECT COUNT(*) FROM assignment_submissions WHERE assignment_id = ca.id AND student_id = ?) as attempts
         FROM class_assignments ca
         WHERE ca.class_id = ?
         ORDER BY ca.created_at DESC
-    """, (student["id"], student["id"], class_id))
+    """, (student["id"], student["id"], student["id"], student["id"], class_id))
 
     rows = cursor.fetchall()
     conn.close()
@@ -574,8 +709,21 @@ async def get_student_assignments(student: dict = Depends(get_current_user)):
     result = []
     for r in rows:
         d = dict(r)
+        d["assignment_type"] = d.get("assignment_type") or "code"
         d["has_submitted"] = (d["attempts"] or 0) > 0
-        d["is_ac"] = (d["best_score"] is not None and d["best_score"] > 0)
+        if d["assignment_type"] == "quiz":
+            try:
+                q_list = json.loads(d.get("quiz_data_json") or "[]")
+                d["question_count"] = len(q_list)
+            except Exception:
+                d["question_count"] = 0
+            d["duration_minutes"] = d.get("duration_minutes") or 45
+            d["is_ac"] = d["has_submitted"] and (d["best_score"] is not None)
+            d["status"] = d.get("last_status") or "pending"
+        else:
+            d["is_ac"] = (d["best_score"] is not None and d["best_score"] > 0)
+        # Bỏ trường quiz_data_json để không lộ đáp án ở danh sách
+        d.pop("quiz_data_json", None)
         result.append(d)
 
     return {
@@ -705,3 +853,165 @@ async def submit_assignment_code(assignment_id: int, req: SubmitAssignmentReques
         "results": judge_result["results"],
         "ai_feedback": ai_feedback
     }
+
+
+@classroom_router.get("/student/assignment/{assignment_id}/quiz")
+async def get_student_quiz(assignment_id: int, student: dict = Depends(get_current_user)):
+    """Học sinh lấy nội dung đề thi trắc nghiệm để làm bài (Ẩn đáp án nếu chưa nộp)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT ca.*, c.class_name, u.full_name as teacher_name
+        FROM class_assignments ca
+        JOIN classes c ON ca.class_id = c.id
+        JOIN users u ON ca.teacher_id = u.id
+        WHERE ca.id = ? AND ca.assignment_type = 'quiz'
+    """, (assignment_id,))
+    assignment = cursor.fetchone()
+
+    if not assignment:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Đề thi trắc nghiệm không tồn tại.")
+
+    # Kiểm tra xem học sinh đã nộp bài này chưa
+    cursor.execute("""
+        SELECT * FROM assignment_submissions 
+        WHERE assignment_id = ? AND student_id = ? 
+        ORDER BY submitted_at DESC LIMIT 1
+    """, (assignment_id, student["id"]))
+    sub = cursor.fetchone()
+    conn.close()
+
+    try:
+        raw_questions = json.loads(assignment["quiz_data_json"] or "[]")
+    except Exception:
+        raw_questions = []
+
+    has_submitted = sub is not None
+    client_questions = []
+
+    if has_submitted:
+        # Nếu đã nộp: Trả về đầy đủ đáp án đúng và lời giải để học sinh xem lại
+        saved_answers = {}
+        try:
+            saved_answers = json.loads(sub["answers_json"] or sub["code"] or "{}")
+        except Exception:
+            pass
+
+        client_questions = raw_questions
+        return {
+            "has_submitted": True,
+            "title": assignment["title"],
+            "description": assignment["description"],
+            "duration_minutes": assignment["duration_minutes"] or 45,
+            "teacher_name": assignment["teacher_name"],
+            "class_name": assignment["class_name"],
+            "total_questions": len(raw_questions),
+            "score": sub["score"],
+            "total_tests": sub["total_tests"],
+            "status": sub["status"],
+            "submitted_at": sub["submitted_at"],
+            "user_answers": saved_answers,
+            "questions": client_questions
+        }
+    else:
+        # Nếu chưa nộp: Ẩn answer và explanation để chống gian lận
+        for q in raw_questions:
+            client_questions.append({
+                "id": q["id"],
+                "question": q["question"],
+                "options": q["options"]
+                # Ẩn "answer" và "explanation"
+            })
+
+        return {
+            "has_submitted": False,
+            "title": assignment["title"],
+            "description": assignment["description"],
+            "duration_minutes": assignment["duration_minutes"] or 45,
+            "teacher_name": assignment["teacher_name"],
+            "class_name": assignment["class_name"],
+            "total_questions": len(raw_questions),
+            "questions": client_questions
+        }
+
+
+@classroom_router.post("/student/assignment/{assignment_id}/submit-quiz")
+async def submit_student_quiz(assignment_id: int, req: SubmitQuizRequest, student: dict = Depends(get_current_user)):
+    """Học sinh nộp bài thi trắc nghiệm: Tự động chấm điểm ngay lập tức và lưu kết quả."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT * FROM class_assignments 
+        WHERE id = ? AND assignment_type = 'quiz'
+    """, (assignment_id,))
+    assignment = cursor.fetchone()
+
+    if not assignment:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Đề thi không tồn tại.")
+
+    try:
+        questions = json.loads(assignment["quiz_data_json"] or "[]")
+    except Exception:
+        conn.close()
+        raise HTTPException(status_code=500, detail="Dữ liệu câu hỏi bị lỗi.")
+
+    if not questions:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Đề thi chưa có câu hỏi.")
+
+    # Chấm điểm tự động
+    correct_count = 0
+    total_q = len(questions)
+    results_detail = []
+
+    for q in questions:
+        q_id_str = str(q["id"])
+        chosen_opt = req.answers.get(q_id_str)
+        is_correct = (chosen_opt is not None and chosen_opt == q.get("answer"))
+        if is_correct:
+            correct_count += 1
+        results_detail.append({
+            "id": q["id"],
+            "chosen": chosen_opt,
+            "correct_answer": q.get("answer"),
+            "is_correct": is_correct,
+            "explanation": q.get("explanation", "")
+        })
+
+    score_10 = round(correct_count * (10.0 / total_q), 1)
+    status_str = f"{score_10}/10"
+
+    # Lưu kết quả nộp bài vào DB
+    cursor.execute("""
+        INSERT INTO assignment_submissions 
+        (assignment_id, student_id, student_name, code, score, total_tests, status, results_json, answers_json, ai_feedback)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        assignment_id,
+        student["id"],
+        student.get("full_name", "Học sinh"),
+        json.dumps(req.answers),
+        correct_count,
+        total_q,
+        status_str,
+        json.dumps(results_detail, ensure_ascii=False),
+        json.dumps(req.answers),
+        f"Đạt {score_10}/10 điểm ({correct_count}/{total_q} câu đúng). Hoàn thành sau {req.time_spent_seconds} giây."
+    ))
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "score": correct_count,
+        "total": total_q,
+        "score_10": score_10,
+        "status": status_str,
+        "results": results_detail,
+        "full_questions": questions
+    }
+

@@ -2890,16 +2890,160 @@ async function loadTeacherAssignmentsPane(cls) {
         const assignments = res.assignments || [];
 
         pane.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">Bài tập đã giao cho lớp (${assignments.length})</h3>
-                <button class="btn-primary" id="btn-toggle-create-assignment" style="width:auto; padding:8px 18px; margin:0;">
-                    ➕ Giao Bài Tập Mới
-                </button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">Bài tập & Đề thi đã giao (${assignments.length})</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn-primary" id="btn-toggle-create-quiz" style="background:#4f46e5; border-color:#6366f1; width:auto; padding:8px 18px; margin:0;">
+                        📑 Tải Đề Trắc Nghiệm (Word / Azota)
+                    </button>
+                    <button class="btn-secondary" id="btn-toggle-create-assignment" style="width:auto; padding:8px 18px; margin:0;">
+                        💻 Giao Bài Code (Python)
+                    </button>
+                </div>
             </div>
 
-            <!-- Form tạo bài tập mới (toggleable) -->
+            <!-- FORM 1: TẢI ĐỀ THI TRẮC NGHIỆM CHUẨN AZOTA (WORD / TEXT) -->
+            <div class="create-assignment-box hidden" id="box-create-quiz" style="border-color:#6366f1; background:rgba(99,102,241,0.04);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <h3 style="margin:0; color:#818cf8; font-size:1.15rem;">📑 Tạo Đề Thi Trắc Nghiệm (Chuẩn Azota)</h3>
+                    <span style="font-size:0.8rem; background:rgba(99,102,241,0.2); color:#c7d2fe; padding:3px 8px; border-radius:4px;">Tự động nhận diện đáp án</span>
+                </div>
+
+                <!-- Hướng dẫn định dạng chuẩn Azota -->
+                <div class="azota-guide-card">
+                    <div class="azota-guide-header" id="btn-toggle-azota-guide">
+                        <span>💡 Hướng dẫn chỉnh file Word / Soạn đề chuẩn Azota (Bấm để xem)</span>
+                        <span id="azota-guide-arrow">▼</span>
+                    </div>
+                    <div class="azota-guide-body hidden" id="azota-guide-body">
+                        <p>Hệ thống tự động bóc tách từng câu hỏi, các phương án A, B, C, D và lời giải chi tiết. Hãy đảm bảo đề thi tuân thủ 1 trong các cách sau:</p>
+                        
+                        <div class="azota-guide-rule">
+                            <span class="azota-rule-icon">1️⃣</span>
+                            <div>
+                                <b>Bắt đầu mỗi câu hỏi:</b> Dùng <code>Câu 1:</code>, <code>Câu 2:</code> hoặc <code>Câu 1.</code>, <code>1.</code>, <code>1:</code>.
+                            </div>
+                        </div>
+
+                        <div class="azota-guide-rule">
+                            <span class="azota-rule-icon">2️⃣</span>
+                            <div>
+                                <b>Các phương án:</b> Dùng <code>A.</code>, <code>B.</code>, <code>C.</code>, <code>D.</code> (có thể nằm trên từng dòng hoặc chung 1 dòng).
+                            </div>
+                        </div>
+
+                        <div class="azota-guide-rule">
+                            <span class="azota-rule-icon">3️⃣</span>
+                            <div>
+                                <b>Cách nhập Đáp Án Đúng (3 cách linh hoạt):</b>
+                                <ul style="margin:6px 0 0 20px; line-height:1.6;">
+                                    <li><b>Cách 1 (Chuẩn Word Azota):</b> Trong file Word (.docx), <u>gạch chân</u> chữ cái đáp án đúng (ví dụ: <u>A.</u> hoặc <u>A</u>) hoặc <b>in đậm</b> chữ cái đáp án đúng.</li>
+                                    <li><b>Cách 2 (Bảng đáp án cuối đề):</b> Đặt ở cuối file đoạn: <code>ĐÁP ÁN: 1.A  2.B  3.C  4.D...</code> hoặc <code>1-A, 2-B...</code></li>
+                                    <li><b>Cách 3 (Ghi trực tiếp):</b> Thêm dòng <code>Đáp án: A</code> (hoặc <code>Chọn A</code>) ngay dưới mỗi câu.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="azota-guide-rule">
+                            <span class="azota-rule-icon">4️⃣</span>
+                            <div>
+                                <b>Lời giải chi tiết:</b> Bắt đầu bằng <code>Lời giải:</code> hoặc <code>Giải thích:</code> sau các phương án.
+                            </div>
+                        </div>
+
+                        <div class="azota-sample-box">
+                            <button type="button" class="azota-btn-copy-sample" id="btn-copy-azota-sample">Copy mẫu đề</button>
+<span style="color:#94a3b8;">/* MẪU ĐỀ THI TRẮC NGHIỆM CHUẨN AZOTA: */</span>
+Câu 1: Thiết bị nào sau đây dùng để kết nối mạng cục bộ LAN?
+A. Chuột máy tính
+B. Switch
+C. Bàn phím
+D. Tai nghe
+Đáp án: B
+Lời giải: Switch là thiết bị chuyển mạch đóng vai trò kết nối các thiết bị trong mạng LAN.
+
+Câu 2: Giao thức nào truyền tải siêu văn bản an toàn có mã hóa?
+A. HTTP
+B. FTP
+C. HTTPS
+D. SMTP
+Đáp án: C
+Lời giải: HTTPS (Hypertext Transfer Protocol Secure) sử dụng SSL/TLS để mã hóa dữ liệu.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chế độ nhập: File Word hoặc Paste Text -->
+                <div class="azota-mode-tabs">
+                    <button type="button" class="azota-tab-btn active" id="tab-btn-azota-word">📄 Tải File Word (.docx)</button>
+                    <button type="button" class="azota-tab-btn" id="tab-btn-azota-text">📋 Dán Văn Bản (Paste Text)</button>
+                </div>
+
+                <!-- Khung 1: Upload File Word -->
+                <div id="pane-azota-word">
+                    <div class="azota-dropzone" id="azota-dropzone">
+                        <div class="dropzone-icon">📁</div>
+                        <div class="dropzone-title">Kéo & thả file Word (.docx) vào đây, hoặc nhấn để chọn file</div>
+                        <div class="dropzone-sub">Hệ thống tự động phát hiện đáp án gạch chân chuẩn Azota</div>
+                        <input type="file" id="azota-file-input" accept=".docx" style="display:none;">
+                    </div>
+                    <div id="azota-selected-file-name" style="font-size:0.9rem; color:#34d399; font-weight:600; margin-bottom:12px; display:none;"></div>
+                </div>
+
+                <!-- Khung 2: Paste Text -->
+                <div id="pane-azota-text" class="hidden">
+                    <div class="form-group">
+                        <label>Dán toàn bộ nội dung đề thi vào đây:</label>
+                        <textarea id="azota-raw-text" style="width:100%; min-height:160px; font-family:'JetBrains Mono', Consolas, monospace; font-size:0.85rem; background:var(--bg-secondary); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-primary); padding:12px;" placeholder="Câu 1: ...&#10;A. ...&#10;B. ...&#10;C. ...&#10;D. ...&#10;Đáp án: A&#10;&#10;Câu 2: ..."></textarea>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button type="button" class="btn-primary" id="btn-parse-azota-exam" style="background:#4f46e5; border-color:#6366f1;">
+                        🔍 Phân Tích & Xem Trước Đề Thi
+                    </button>
+                    <button type="button" class="btn-secondary" id="btn-cancel-create-quiz">Hủy</button>
+                </div>
+
+                <!-- Khu vực Xem trước & Sửa đáp án sau khi Parse thành công -->
+                <div class="azota-preview-container hidden" id="azota-preview-area">
+                    <div class="azota-preview-header">
+                        <div>
+                            <div class="azota-preview-title" id="azota-preview-summary">📋 Danh sách câu hỏi đã nhận diện</div>
+                            <small style="color:var(--text-muted);">Bấm vào nút A, B, C, D để đổi đáp án đúng cho từng câu nếu cần</small>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:12px; margin-bottom:16px;">
+                        <div class="form-group">
+                            <label>Tiêu đề đề thi *</label>
+                            <input type="text" id="quiz-exam-title-input" placeholder="Ví dụ: Đề khảo sát Tin học 12 - Lần 1">
+                        </div>
+                        <div class="form-group">
+                            <label>Thời gian làm bài (Phút) *</label>
+                            <input type="number" id="quiz-exam-duration-input" value="45" min="5" max="180">
+                        </div>
+                        <div class="form-group">
+                            <label>Hạn nộp (Không bắt buộc)</label>
+                            <input type="datetime-local" id="quiz-exam-deadline-input">
+                        </div>
+                    </div>
+
+                    <div id="azota-preview-questions-list">
+                        <!-- Danh sách câu hỏi injected via JS -->
+                    </div>
+
+                    <div style="margin-top:20px; display:flex; gap:12px;">
+                        <button type="button" class="btn-primary" id="btn-publish-quiz-exam" style="flex:1; padding:12px; font-weight:700; font-size:1rem; background:#10b981; border-color:#059669;">
+                            🚀 Xuất Bản & Giao Đề Thi Cho Cả Lớp
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORM 2: TẠO BÀI TẬP LẬP TRÌNH (PYTHON) -->
             <div class="create-assignment-box hidden" id="box-create-assignment">
-                <h3 style="margin:0 0 14px; color:var(--accent-secondary); font-size:1.1rem;">📝 Giao Bài Tập Mới Cho Lớp</h3>
+                <h3 style="margin:0 0 14px; color:var(--accent-secondary); font-size:1.1rem;">💻 Giao Bài Tập Lập Trình (Python)</h3>
                 <div class="form-group">
                     <label>Tiêu đề bài tập *</label>
                     <input type="text" id="asg-title" placeholder="Ví dụ: Đếm số lượng số nguyên tố trong dãy số">
@@ -2946,36 +3090,46 @@ async function loadTeacherAssignmentsPane(cls) {
                 </div>
             </div>
 
-            <!-- Danh sách bài tập -->
+            <!-- Danh sách bài tập đã giao -->
             <div class="assignments-list-container" id="teacher-assignments-list">
                 ${assignments.length === 0 ? `
                     <div class="folder-placeholder" style="padding:30px; text-align:center;">
-                        Chưa có bài tập nào được giao. Hãy nhấn nút <b>➕ Giao Bài Tập Mới</b> ở trên để tạo bài!
+                        Chưa có bài tập nào được giao. Hãy chọn <b>📑 Tải Đề Trắc Nghiệm</b> hoặc <b>💻 Giao Bài Code</b> ở trên để tạo bài!
                     </div>
                 ` : assignments.map(a => {
+                    const isQuiz = a.assignment_type === 'quiz';
                     const isExpired = a.deadline && new Date(a.deadline) < new Date();
                     const deadlineBadge = a.deadline 
                         ? `<span class="deadline-badge ${isExpired ? 'deadline-expired' : 'deadline-active'}">
                             ${isExpired ? 'Đã hết hạn' : 'Hạn: ' + new Date(a.deadline).toLocaleString('vi-VN')}
                            </span>`
-                        : `<span class="deadline-badge deadline-active">Không giới hạn thời gian</span>`;
+                        : `<span class="deadline-badge deadline-active">Không giới hạn</span>`;
+
+                    const typeBadge = isQuiz 
+                        ? `<span style="background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid #6366f1; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">📑 Trắc nghiệm (${a.question_count || 0} câu • ${a.duration_minutes || 45}p)</span>`
+                        : `<span style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid #10b981; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">💻 Lập trình Python</span>`;
 
                     return `
                         <div class="assignment-card">
                             <div class="assignment-main-info">
                                 <div class="assignment-card-title">
                                     <span>${escapeHtml(a.title)}</span>
-                                    ${deadlineBadge}
+                                    <div style="display:flex; gap:6px; align-items:center;">
+                                        ${typeBadge}
+                                        ${deadlineBadge}
+                                    </div>
                                 </div>
                                 <div class="assignment-meta-row">
-                                    <span>⏱️ Giới hạn: ${a.time_limit || 1.0}s</span>
-                                    <span>🧪 ${a.test_case_count || 'Nhiều'} Test cases</span>
-                                    <span style="color:#10b981; font-weight:600;">📊 Đã nộp: ${a.submission_count} học sinh</span>
+                                    ${isQuiz 
+                                        ? `<span>⏱️ Thời gian: ${a.duration_minutes || 45} phút</span><span>📝 ${a.question_count || 0} câu hỏi</span>`
+                                        : `<span>⏱️ ${a.time_limit || 1.0}s/test</span><span>🧪 ${a.test_cases_count || 0} Tests</span>`
+                                    }
+                                    <span style="color:#10b981; font-weight:600;">📊 Đã nộp: ${a.submitted_count || 0} học sinh</span>
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px;">
-                                <button class="btn-secondary" style="padding:6px 14px; font-size:0.85rem;" onclick="viewAssignmentSubmissions(${a.id}, '${escapeHtml(a.title)}')">
-                                    📊 Xem Bài Nộp
+                                <button class="btn-secondary" style="padding:6px 14px; font-size:0.85rem;" onclick="viewAssignmentSubmissions(${a.id}, '${escapeHtml(a.title)}', '${a.assignment_type || 'code'}')">
+                                    📊 Xem Điểm Số
                                 </button>
                                 <button class="btn-danger" style="padding:6px 12px; font-size:0.85rem;" onclick="deleteAssignment(${a.id}, '${escapeHtml(a.title)}')">
                                     🗑️
@@ -2987,15 +3141,29 @@ async function loadTeacherAssignmentsPane(cls) {
             </div>
         `;
 
-        // Wire Create Form Events
-        const boxCreate = document.getElementById('box-create-assignment');
-        const btnToggle = document.getElementById('btn-toggle-create-assignment');
-        const btnCancel = document.getElementById('btn-cancel-create-assignment');
+        // Wire Code Form Events
+        const boxCreateCode = document.getElementById('box-create-assignment');
+        const boxCreateQuiz = document.getElementById('box-create-quiz');
+        const btnToggleCode = document.getElementById('btn-toggle-create-assignment');
+        const btnToggleQuiz = document.getElementById('btn-toggle-create-quiz');
+        const btnCancelCode = document.getElementById('btn-cancel-create-assignment');
         const btnAddTc = document.getElementById('btn-add-testcase');
-        const btnSubmitAsg = document.getElementById('btn-submit-create-assignment');
+        const btnSubmitCode = document.getElementById('btn-submit-create-assignment');
 
-        btnToggle.addEventListener('click', () => boxCreate.classList.toggle('hidden'));
-        btnCancel.addEventListener('click', () => boxCreate.classList.add('hidden'));
+        btnToggleCode.addEventListener('click', () => {
+            boxCreateQuiz.classList.add('hidden');
+            boxCreateCode.classList.toggle('hidden');
+        });
+
+        btnToggleQuiz.addEventListener('click', () => {
+            boxCreateCode.classList.add('hidden');
+            boxCreateQuiz.classList.toggle('hidden');
+        });
+
+        btnCancelCode.addEventListener('click', () => boxCreateCode.classList.add('hidden'));
+
+        // Wire Azota Exam Events
+        initAzotaCreatorEvents(cls);
 
         btnAddTc.addEventListener('click', () => {
             const container = document.getElementById('test-cases-container');
@@ -3018,10 +3186,264 @@ async function loadTeacherAssignmentsPane(cls) {
             container.appendChild(item);
         });
 
-        btnSubmitAsg.addEventListener('click', () => submitCreateAssignment(cls));
+        btnSubmitCode.addEventListener('click', () => submitCreateAssignment(cls));
 
     } catch (e) {
         pane.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi: ${e.message}</div>`;
+    }
+}
+
+// ============================================================================
+// AZOTA EXAM CREATOR (WORD & TEXT PARSER)
+// ============================================================================
+
+let currentParsedQuizQuestions = [];
+
+function initAzotaCreatorEvents(cls) {
+    const btnToggleGuide = document.getElementById('btn-toggle-azota-guide');
+    const guideBody = document.getElementById('azota-guide-body');
+    const guideArrow = document.getElementById('azota-guide-arrow');
+    const btnCopySample = document.getElementById('btn-copy-azota-sample');
+
+    btnToggleGuide?.addEventListener('click', () => {
+        const isHidden = guideBody.classList.toggle('hidden');
+        if (guideArrow) guideArrow.textContent = isHidden ? '▼' : '▲';
+    });
+
+    btnCopySample?.addEventListener('click', () => {
+        const sampleText = `Câu 1: Thiết bị nào sau đây dùng để kết nối mạng cục bộ LAN?
+A. Chuột máy tính
+B. Switch
+C. Bàn phím
+D. Tai nghe
+Đáp án: B
+Lời giải: Switch là thiết bị chuyển mạch đóng vai trò kết nối các thiết bị trong mạng LAN.
+
+Câu 2: Giao thức nào truyền tải siêu văn bản an toàn có mã hóa?
+A. HTTP
+B. FTP
+C. HTTPS
+D. SMTP
+Đáp án: C
+Lời giải: HTTPS (Hypertext Transfer Protocol Secure) sử dụng SSL/TLS để mã hóa dữ liệu.`;
+        navigator.clipboard.writeText(sampleText);
+        showToast('📋 Đã copy mẫu đề thi chuẩn Azota vào clipboard!');
+        const txtArea = document.getElementById('azota-raw-text');
+        if (txtArea) txtArea.value = sampleText;
+    });
+
+    // Tab switch (Word vs Text)
+    const tabWord = document.getElementById('tab-btn-azota-word');
+    const tabText = document.getElementById('tab-btn-azota-text');
+    const paneWord = document.getElementById('pane-azota-word');
+    const paneText = document.getElementById('pane-azota-text');
+
+    tabWord?.addEventListener('click', () => {
+        tabWord.classList.add('active');
+        tabText.classList.remove('active');
+        paneWord.classList.remove('hidden');
+        paneText.classList.add('hidden');
+    });
+
+    tabText?.addEventListener('click', () => {
+        tabText.classList.add('active');
+        tabWord.classList.remove('active');
+        paneText.classList.remove('hidden');
+        paneWord.classList.add('hidden');
+    });
+
+    // File input & Dropzone
+    const dropzone = document.getElementById('azota-dropzone');
+    const fileInput = document.getElementById('azota-file-input');
+    const fileNameDisplay = document.getElementById('azota-selected-file-name');
+    let selectedWordFile = null;
+
+    dropzone?.addEventListener('click', () => fileInput.click());
+
+    fileInput?.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+            selectedWordFile = e.target.files[0];
+            if (fileNameDisplay) {
+                fileNameDisplay.textContent = `📄 Đã chọn file: ${selectedWordFile.name} (${Math.round(selectedWordFile.size / 1024)} KB)`;
+                fileNameDisplay.style.display = 'block';
+            }
+        }
+    });
+
+    dropzone?.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+
+    dropzone?.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+
+    dropzone?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            selectedWordFile = e.dataTransfer.files[0];
+            if (fileNameDisplay) {
+                fileNameDisplay.textContent = `📄 Đã chọn file: ${selectedWordFile.name} (${Math.round(selectedWordFile.size / 1024)} KB)`;
+                fileNameDisplay.style.display = 'block';
+            }
+        }
+    });
+
+    // Cancel Button
+    document.getElementById('btn-cancel-create-quiz')?.addEventListener('click', () => {
+        document.getElementById('box-create-quiz').classList.add('hidden');
+    });
+
+    // Parse Button
+    document.getElementById('btn-parse-azota-exam')?.addEventListener('click', async () => {
+        const isWordTab = tabWord.classList.contains('active');
+        const btnParse = document.getElementById('btn-parse-azota-exam');
+
+        try {
+            btnParse.disabled = true;
+            btnParse.innerHTML = '⏳ Đang phân tích câu hỏi & đáp án...';
+
+            let result = null;
+            if (isWordTab) {
+                if (!selectedWordFile) {
+                    alert("Vui lòng chọn 1 file Word (.docx) đề thi.");
+                    return;
+                }
+                const formData = new FormData();
+                formData.append('file', selectedWordFile);
+
+                const headers = {};
+                if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+                const res = await fetch(`${API_BASE}/api/classroom/teacher/upload-exam-word`, {
+                    method: 'POST',
+                    headers,
+                    body: formData
+                });
+                result = await res.json();
+                if (!res.ok) throw new Error(result.detail || 'Lỗi đọc file Word');
+            } else {
+                const text = document.getElementById('azota-raw-text').value.trim();
+                if (!text) {
+                    alert("Vui lòng dán nội dung đề thi vào khung văn bản.");
+                    return;
+                }
+                result = await apiPost('/api/classroom/teacher/parse-exam-text', { text });
+            }
+
+            currentParsedQuizQuestions = result.questions || [];
+            if (currentParsedQuizQuestions.length === 0) {
+                alert("Không bóc tách được câu hỏi nào. Vui lòng xem lại hướng dẫn định dạng chuẩn Azota.");
+                return;
+            }
+
+            showToast(`🎉 Đã nhận diện thành công ${currentParsedQuizQuestions.length} câu hỏi trắc nghiệm!`);
+            renderAzotaQuestionsPreview(currentParsedQuizQuestions);
+
+        } catch (err) {
+            alert("Lỗi phân tích đề thi: " + err.message);
+        } finally {
+            btnParse.disabled = false;
+            btnParse.innerHTML = '🔍 Phân Tích & Xem Trước Đề Thi';
+        }
+    });
+
+    // Publish Quiz Button
+    document.getElementById('btn-publish-quiz-exam')?.addEventListener('click', () => publishAzotaQuizExam(cls));
+}
+
+function renderAzotaQuestionsPreview(questions) {
+    const area = document.getElementById('azota-preview-area');
+    const list = document.getElementById('azota-preview-questions-list');
+    const summary = document.getElementById('azota-preview-summary');
+
+    area.classList.remove('hidden');
+    summary.textContent = `📋 Đã bóc tách được ${questions.length} câu hỏi trắc nghiệm`;
+
+    const optLabels = ['A', 'B', 'C', 'D'];
+
+    list.innerHTML = questions.map((q, qIdx) => {
+        const correctAns = q.answer !== null && q.answer !== undefined ? q.answer : 0;
+        return `
+            <div class="azota-q-card" id="azota-card-${qIdx}">
+                <div class="azota-q-card-header">
+                    <span class="azota-q-num">Câu ${qIdx + 1}:</span>
+                    <div class="azota-opt-btn-group">
+                        <span class="azota-opt-pick-label">Đáp án đúng:</span>
+                        ${optLabels.map((lab, optIdx) => `
+                            <button type="button" class="azota-opt-pick-btn ${correctAns === optIdx ? 'selected' : ''}" 
+                                onclick="pickAzotaCorrectAnswer(${qIdx}, ${optIdx})" title="Chọn ${lab} làm đáp án đúng">
+                                ${lab}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+                <div style="font-weight:600; color:var(--text-primary); margin-bottom:12px; line-height:1.5;">
+                    ${escapeHtml(q.question)}
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;">
+                    ${q.options.map((opt, optIdx) => `
+                        <div style="font-size:0.9rem; color:${correctAns === optIdx ? '#34d399' : 'var(--text-secondary)'}; font-weight:${correctAns === optIdx ? '700' : 'normal'};">
+                            <b>${optLabels[optIdx]}.</b> ${escapeHtml(opt)} ${correctAns === optIdx ? '✅' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                ${q.explanation ? `
+                    <div style="background:rgba(99,102,241,0.08); border-left:3px solid #6366f1; padding:8px 12px; border-radius:4px; font-size:0.82rem; color:#cbd5e1; margin-top:8px;">
+                        💡 <b>Lời giải:</b> ${escapeHtml(q.explanation)}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+
+    area.scrollIntoView({ behavior: 'smooth' });
+}
+
+window.pickAzotaCorrectAnswer = function(qIdx, optIdx) {
+    if (currentParsedQuizQuestions[qIdx]) {
+        currentParsedQuizQuestions[qIdx].answer = optIdx;
+        renderAzotaQuestionsPreview(currentParsedQuizQuestions);
+    }
+};
+
+async function publishAzotaQuizExam(cls) {
+    const title = document.getElementById('quiz-exam-title-input').value.trim();
+    const duration = parseInt(document.getElementById('quiz-exam-duration-input').value) || 45;
+    const deadline = document.getElementById('quiz-exam-deadline-input').value || null;
+
+    if (!title) {
+        alert("Vui lòng nhập tiêu đề cho đề thi trắc nghiệm.");
+        document.getElementById('quiz-exam-title-input').focus();
+        return;
+    }
+
+    if (!currentParsedQuizQuestions || currentParsedQuizQuestions.length === 0) {
+        alert("Đề thi chưa có câu hỏi nào.");
+        return;
+    }
+
+    const btn = document.getElementById('btn-publish-quiz-exam');
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Đang xuất bản đề thi...';
+
+        await apiPost('/api/classroom/teacher/assignments/quiz', {
+            title,
+            description: `Đề thi trắc nghiệm chuẩn Azota gồm ${currentParsedQuizQuestions.length} câu hỏi. Thời gian làm bài: ${duration} phút.`,
+            duration_minutes: duration,
+            deadline,
+            questions: currentParsedQuizQuestions
+        });
+
+        showToast(`🎉 Đã giao đề thi "${title}" thành công cho cả lớp!`);
+        loadTeacherAssignmentsPane(cls);
+        renderSidebar();
+    } catch (e) {
+        alert("Lỗi xuất bản đề thi: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 Xuất Bản & Giao Đề Thi Cho Cả Lớp';
     }
 }
 
@@ -3066,9 +3488,9 @@ async function submitCreateAssignment(cls) {
     }
 }
 
-async function viewAssignmentSubmissions(assignmentId, title) {
+async function viewAssignmentSubmissions(assignmentId, title, type = 'code') {
     document.getElementById('student-detail-name').textContent = `Bài nộp: ${title}`;
-    document.getElementById('student-detail-meta').textContent = `Danh sách học sinh đã nộp bài tập này`;
+    document.getElementById('student-detail-meta').textContent = `Danh sách học sinh đã hoàn thành`;
     const body = document.getElementById('student-detail-body');
     body.innerHTML = '<div style="text-align:center; padding: 30px; color: var(--text-muted);">⏳ Đang tải bài nộp của học sinh...</div>';
     openModal('modal-student-detail');
@@ -3076,14 +3498,15 @@ async function viewAssignmentSubmissions(assignmentId, title) {
     try {
         const res = await apiGet(`/api/classroom/teacher/assignment/${assignmentId}/submissions`);
         const submissions = res.submissions || [];
+        const isQuiz = res.assignment_type === 'quiz' || type === 'quiz';
 
         if (submissions.length === 0) {
             body.innerHTML = `
                 <div class="folder-placeholder" style="padding: 40px; text-align: center;">
                     <div style="font-size: 2.5rem; margin-bottom: 10px;">📝</div>
-                    <h4>Chưa có học sinh nào nộp bài tập này</h4>
+                    <h4>Chưa có học sinh nào nộp bài này</h4>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">
-                        Các bài nộp của học sinh kèm theo điểm số và code sẽ hiển thị tại đây ngay khi các em nộp.
+                        Kết quả bài làm kèm điểm số của học sinh sẽ hiển thị tại đây ngay khi các em nộp bài.
                     </p>
                 </div>
             `;
@@ -3098,30 +3521,40 @@ async function viewAssignmentSubmissions(assignmentId, title) {
                             <th>STT</th>
                             <th>Học sinh</th>
                             <th>Thời gian nộp</th>
-                            <th>Điểm số</th>
-                            <th>Trạng thái</th>
+                            <th>${isQuiz ? 'Điểm số (/10)' : 'Điểm Tests'}</th>
+                            <th>Kết quả</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${submissions.map((sub, i) => `
-                            <tr>
-                                <td>${i + 1}</td>
-                                <td style="font-weight: 600; color: var(--text-primary);">${escapeHtml(sub.student_name)}</td>
-                                <td>${new Date(sub.submitted_at).toLocaleString('vi-VN')}</td>
-                                <td><b>${sub.score}</b> / ${sub.total_tests}</td>
-                                <td>
-                                    <span class="difficulty-badge ${sub.status === 'AC' ? 'easy' : 'hard'}" style="padding: 2px 8px; font-size: 0.75rem;">
-                                        ${sub.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="btn-secondary" style="padding: 4px 12px; font-size: 0.8rem;" onclick="viewSubmissionDetail('${escapeHtml(sub.student_name)}', '${escapeHtml(title)}', ${JSON.stringify(sub.code || '').replace(/"/g, '&quot;')}, ${sub.score}, ${sub.total_tests}, '${sub.status}', ${JSON.stringify(sub.ai_feedback || '').replace(/"/g, '&quot;')}, '${sub.submitted_at}')">
-                                        🔍 Xem Code & AI
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('')}
+                        ${submissions.map((sub, i) => {
+                            const scoreDisplay = isQuiz 
+                                ? `<b style="color:#34d399; font-size:1.05rem;">${sub.status}</b>` 
+                                : `<b>${sub.score}</b> / ${sub.total_tests}`;
+                            
+                            const resultBadge = isQuiz 
+                                ? `<span class="difficulty-badge easy" style="padding: 2px 8px; font-size: 0.75rem;">${sub.score}/${sub.total_tests} câu đúng</span>`
+                                : `<span class="difficulty-badge ${sub.status === 'AC' ? 'easy' : 'hard'}" style="padding: 2px 8px; font-size: 0.75rem;">${sub.status}</span>`;
+
+                            const btnAction = isQuiz 
+                                ? `<button class="btn-secondary" style="padding: 4px 12px; font-size: 0.8rem;" onclick="viewQuizSubmissionDetail('${escapeHtml(sub.student_name)}', '${escapeHtml(title)}', ${JSON.stringify(sub).replace(/"/g, '&quot;')}, ${JSON.stringify(res.quiz_data || []).replace(/"/g, '&quot;')})">
+                                    🔍 Xem Bài Làm
+                                   </button>`
+                                : `<button class="btn-secondary" style="padding: 4px 12px; font-size: 0.8rem;" onclick="viewSubmissionDetail('${escapeHtml(sub.student_name)}', '${escapeHtml(title)}', ${JSON.stringify(sub.code || '').replace(/"/g, '&quot;')}, ${sub.score}, ${sub.total_tests}, '${sub.status}', ${JSON.stringify(sub.ai_feedback || '').replace(/"/g, '&quot;')}, '${sub.submitted_at}')">
+                                    🔍 Xem Code & AI
+                                   </button>`;
+
+                            return `
+                                <tr>
+                                    <td>${i + 1}</td>
+                                    <td style="font-weight: 600; color: var(--text-primary);">${escapeHtml(sub.student_name)}</td>
+                                    <td>${new Date(sub.submitted_at).toLocaleString('vi-VN')}</td>
+                                    <td>${scoreDisplay}</td>
+                                    <td>${resultBadge}</td>
+                                    <td>${btnAction}</td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>
@@ -3129,6 +3562,84 @@ async function viewAssignmentSubmissions(assignmentId, title) {
     } catch (e) {
         body.innerHTML = `<div style="color: #ef4444; padding: 20px;">Lỗi: ${e.message}</div>`;
     }
+}
+
+function viewQuizSubmissionDetail(studentName, examTitle, sub, quizData) {
+    document.getElementById('submission-viewer-title').textContent = `Bài thi: ${examTitle}`;
+    document.getElementById('submission-viewer-meta').textContent = `Học sinh: ${studentName} • Điểm: ${sub.status} (${sub.score}/${sub.total_tests} câu đúng) • Nộp lúc: ${new Date(sub.submitted_at).toLocaleString('vi-VN')}`;
+    const body = document.getElementById('submission-viewer-body');
+
+    let answers = {};
+    try {
+        answers = JSON.parse(sub.answers_json || sub.code || '{}');
+    } catch (e) {}
+
+    let results = [];
+    try {
+        results = JSON.parse(sub.results_json || '[]');
+    } catch (e) {}
+
+    const optLabels = ['A', 'B', 'C', 'D'];
+
+    body.innerHTML = `
+        <div style="margin-bottom: 20px; background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:8px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h3 style="margin:0 0 4px; color:#fff;">Kết quả chấm tự động:</h3>
+                    <div style="color:var(--text-muted); font-size:0.9rem;">${sub.ai_feedback || ''}</div>
+                </div>
+                <div style="font-size:2rem; font-weight:900; color:#34d399; font-family:'JetBrains Mono', monospace;">
+                    ${sub.status}
+                </div>
+            </div>
+        </div>
+
+        <h4 style="margin:0 0 12px; color:var(--text-primary);">Chi tiết từng câu hỏi:</h4>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            ${(quizData || []).map((q, idx) => {
+                const userChoice = answers[q.id];
+                const isCorrect = userChoice === q.answer;
+                return `
+                    <div class="azota-q-card" style="border-left: 4px solid ${isCorrect ? '#10b981' : '#ef4444'};">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span class="azota-q-num">Câu ${idx + 1}:</span>
+                            <span style="font-weight:700; font-size:0.85rem; color:${isCorrect ? '#34d399' : '#ef4444'};">
+                                ${isCorrect ? '✅ ĐÚNG' : '❌ SAI'}
+                            </span>
+                        </div>
+                        <div style="font-weight:600; color:#fff; margin-bottom:10px;">
+                            ${escapeHtml(q.question)}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; font-size:0.9rem;">
+                            ${q.options.map((opt, optIdx) => {
+                                let style = 'color:var(--text-secondary);';
+                                let icon = '';
+                                if (optIdx === q.answer) {
+                                    style = 'color:#34d399; font-weight:700;';
+                                    icon = ' (Đáp án đúng)';
+                                }
+                                if (optIdx === userChoice && !isCorrect) {
+                                    style = 'color:#f87171; font-weight:700; text-decoration:line-through;';
+                                    icon = ' ❌ (Học sinh chọn)';
+                                } else if (optIdx === userChoice && isCorrect) {
+                                    icon = ' ✅ (Học sinh chọn đúng)';
+                                }
+                                return `<div style="${style}"><b>${optLabels[optIdx]}.</b> ${escapeHtml(opt)}${icon}</div>`;
+                            }).join('')}
+                        </div>
+                        ${q.explanation ? `
+                            <div style="background:rgba(255,255,255,0.03); border-radius:4px; padding:8px 12px; margin-top:10px; font-size:0.85rem; color:#cbd5e1;">
+                                💡 <b>Lời giải:</b> ${escapeHtml(q.explanation)}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    renderMath(body);
+    openModal('modal-submission-detail');
 }
 
 async function deleteAssignment(assignmentId, title) {
@@ -3281,15 +3792,22 @@ async function loadStudentAssignmentsList() {
         }
 
         container.innerHTML = assignments.map(a => {
-            const isAc = a.has_submitted && a.status === 'AC';
-            const isWa = a.has_submitted && a.status !== 'AC';
+            const isQuiz = a.assignment_type === 'quiz';
             const isExpired = a.deadline && new Date(a.deadline) < new Date();
 
             let statusHtml = '<span style="color:var(--text-muted);">⭕ Chưa làm</span>';
-            if (isAc) {
-                statusHtml = `<span style="color:#10b981; font-weight:700;">✅ Đã nộp: ${a.score}/${a.total_tests} AC</span>`;
-            } else if (isWa) {
-                statusHtml = `<span style="color:#f59e0b; font-weight:700;">⚠️ Đã nộp: ${a.score}/${a.total_tests} (Chưa hoàn thành)</span>`;
+            if (isQuiz) {
+                if (a.has_submitted) {
+                    statusHtml = `<span style="color:#10b981; font-weight:700;">✅ Đã nộp: ${a.status} (${a.best_score}/${a.question_count} câu)</span>`;
+                }
+            } else {
+                const isAc = a.has_submitted && a.status === 'AC';
+                const isWa = a.has_submitted && a.status !== 'AC';
+                if (isAc) {
+                    statusHtml = `<span style="color:#10b981; font-weight:700;">✅ Đã nộp: ${a.score}/${a.total_tests} AC</span>`;
+                } else if (isWa) {
+                    statusHtml = `<span style="color:#f59e0b; font-weight:700;">⚠️ Đã nộp: ${a.score}/${a.total_tests} (Chưa hoàn thành)</span>`;
+                }
             }
 
             const deadlineBadge = a.deadline 
@@ -3298,22 +3816,35 @@ async function loadStudentAssignmentsList() {
                    </span>`
                 : `<span class="deadline-badge deadline-active">Không giới hạn</span>`;
 
+            const typeBadge = isQuiz 
+                ? `<span style="background:rgba(99,102,241,0.15); color:#818cf8; border:1px solid #6366f1; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">📑 Trắc nghiệm (${a.question_count || 0} câu)</span>`
+                : `<span style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid #10b981; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:700;">💻 Lập trình Python</span>`;
+
+            const actionBtn = isQuiz
+                ? (a.has_submitted 
+                    ? `<button class="btn-secondary" style="width:auto; padding:8px 18px; margin:0;" onclick="openStudentQuizExam(${a.id}, '${escapeHtml(a.title)}')">👁️ Xem Lại Kết Quả</button>`
+                    : `<button class="btn-primary" style="background:#4f46e5; border-color:#6366f1; width:auto; padding:8px 18px; margin:0;" onclick="openStudentQuizExam(${a.id}, '${escapeHtml(a.title)}')">📝 Bắt Đầu Thi</button>`)
+                : `<button class="btn-primary" style="width:auto; padding:8px 20px; margin:0;" onclick="openAssignmentProblem(${JSON.stringify(a).replace(/"/g, '&quot;')})">🚀 Làm Bài Code</button>`;
+
             return `
                 <div class="assignment-card">
                     <div class="assignment-main-info">
                         <div class="assignment-card-title">
                             <span>${escapeHtml(a.title)}</span>
-                            ${deadlineBadge}
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                ${typeBadge}
+                                ${deadlineBadge}
+                            </div>
                         </div>
                         <div class="assignment-meta-row">
                             <span>${statusHtml}</span>
-                            <span>⏱️ ${a.time_limit || 1.0}s/test</span>
-                            <span>🧪 ${a.test_case_count || 1} Tests</span>
+                            ${isQuiz 
+                                ? `<span>⏱️ ${a.duration_minutes || 45} phút</span><span>📝 ${a.question_count || 0} câu trắc nghiệm</span>`
+                                : `<span>⏱️ ${a.time_limit || 1.0}s/test</span><span>🧪 ${a.test_case_count || 1} Tests</span>`
+                            }
                         </div>
                     </div>
-                    <button class="btn-primary" style="width:auto; padding:8px 20px; margin:0;" onclick="openAssignmentProblem(${JSON.stringify(a).replace(/"/g, '&quot;')})">
-                        🚀 Làm Bài Ngay
-                    </button>
+                    ${actionBtn}
                 </div>
             `;
         }).join('');
@@ -3383,3 +3914,331 @@ function viewSubmissionDetail(studentName, problemId, code, score, totalTests, s
     renderMath(body);
     openModal('modal-submission-detail');
 }
+
+// ============================================================================
+// STUDENT ONLINE QUIZ EXAM RUNNER (AZOTA STYLE)
+// ============================================================================
+
+let currentStudentExamId = null;
+let currentExamData = null;
+let studentExamAnswers = {};
+let examTimerInterval = null;
+let examTimeTotalSeconds = 0;
+let examTimeRemaining = 0;
+
+async function openStudentQuizExam(assignmentId, title) {
+    currentStudentExamId = assignmentId;
+    studentExamAnswers = {};
+    clearInterval(examTimerInterval);
+
+    document.getElementById('quiz-exam-title').textContent = title || 'Đề Thi Trắc Nghiệm';
+    document.getElementById('quiz-exam-meta').textContent = 'Đang tải đề thi...';
+    const body = document.getElementById('quiz-exam-body');
+    body.innerHTML = '<div style="text-align:center; padding: 60px; color: var(--text-muted); width:100%;">⏳ Đang tải nội dung đề thi...</div>';
+
+    openModal('modal-student-quiz');
+
+    try {
+        const res = await apiGet(`/api/classroom/student/assignment/${assignmentId}/quiz`);
+        currentExamData = res;
+
+        document.getElementById('quiz-exam-title').textContent = res.title || title;
+        document.getElementById('quiz-exam-meta').textContent = `👨‍🏫 Giáo viên: ${res.teacher_name} • Lớp: ${res.class_name} • ${res.total_questions} câu hỏi (${res.duration_minutes || 45} phút)`;
+
+        if (res.has_submitted) {
+            // Đã nộp bài: Xem lại kết quả và lời giải
+            document.getElementById('btn-submit-exam-quiz').style.display = 'none';
+            document.getElementById('quiz-timer-box').style.display = 'none';
+            studentExamAnswers = res.user_answers || {};
+            renderExamResultReview(res);
+        } else {
+            // Bắt đầu làm bài thi
+            document.getElementById('btn-submit-exam-quiz').style.display = 'block';
+            document.getElementById('quiz-timer-box').style.display = 'flex';
+            
+            // Cài đặt Timer
+            examTimeTotalSeconds = (res.duration_minutes || 45) * 60;
+            examTimeRemaining = examTimeTotalSeconds;
+            updateExamTimerDisplay();
+            startExamTimer();
+
+            renderStudentExamView(res, assignmentId);
+        }
+
+    } catch (e) {
+        body.innerHTML = `<div style="color: #ef4444; padding: 40px; text-align:center; width:100%;">Lỗi tải đề thi: ${e.message}</div>`;
+    }
+}
+window.openStudentQuizExam = openStudentQuizExam;
+
+function closeStudentQuizModal() {
+    if (examTimerInterval && !currentExamData?.has_submitted) {
+        if (!confirm("Bạn đang trong phòng thi! Đóng cửa sổ sẽ không dừng thời gian. Bạn có chắc muốn thoát?")) {
+            return;
+        }
+    }
+    clearInterval(examTimerInterval);
+    closeModals();
+}
+window.closeStudentQuizModal = closeStudentQuizModal;
+
+function startExamTimer() {
+    clearInterval(examTimerInterval);
+    examTimerInterval = setInterval(() => {
+        examTimeRemaining--;
+        updateExamTimerDisplay();
+
+        if (examTimeRemaining <= 0) {
+            clearInterval(examTimerInterval);
+            alert("⏰ ĐÃ HẾT GIỜ LÀM BÀI! Hệ thống sẽ tự động nộp bài thi của bạn.");
+            submitStudentQuizExam(true);
+        }
+    }, 1000);
+}
+
+function updateExamTimerDisplay() {
+    const el = document.getElementById('quiz-timer-val');
+    const box = document.getElementById('quiz-timer-box');
+    if (!el) return;
+
+    const m = Math.floor(examTimeRemaining / 60);
+    const s = examTimeRemaining % 60;
+    el.textContent = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+
+    if (examTimeRemaining <= 300) { // còn dưới 5 phút
+        box?.classList.add('timer-warning');
+    } else {
+        box?.classList.remove('timer-warning');
+    }
+}
+
+function renderStudentExamView(exam, assignmentId) {
+    const body = document.getElementById('quiz-exam-body');
+    const questions = exam.questions || [];
+    const optLabels = ['A', 'B', 'C', 'D'];
+
+    body.innerHTML = `
+        <!-- Cột trái: Đề thi câu hỏi -->
+        <div class="quiz-exam-questions-column">
+            ${questions.map((q, idx) => {
+                return `
+                    <div class="quiz-question-card" id="student-q-${q.id}" style="margin-bottom:24px;">
+                        <div class="q-header">
+                            <span class="q-badge">Câu ${idx + 1} / ${questions.length}</span>
+                        </div>
+                        <h3 class="q-title" style="margin-bottom:18px;">${escapeHtml(q.question)}</h3>
+                        <div class="q-options-list">
+                            ${q.options.map((opt, optIdx) => `
+                                <button type="button" class="quiz-opt opt-clickable" id="opt-btn-${q.id}-${optIdx}" onclick="handleStudentPickExamOption(${q.id}, ${optIdx})">
+                                    <span class="opt-text"><b>${optLabels[optIdx]}.</b> ${escapeHtml(opt)}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+
+        <!-- Cột phải: Phiếu tô đáp án nhanh (Answer Palette) -->
+        <div class="quiz-exam-palette-column">
+            <h4 style="margin:0; font-size:1rem; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+                <span>📋 Phiếu Trả Lời</span>
+                <span style="font-size:0.8rem; color:#818cf8;" id="exam-answered-counter">0 / ${questions.length} câu</span>
+            </h4>
+            <small style="color:var(--text-muted); margin-top:4px; display:block;">Bấm số câu để cuộn nhanh đến câu hỏi</small>
+
+            <div class="quiz-palette-grid">
+                ${questions.map((q, idx) => `
+                    <div class="quiz-palette-item" id="sheet-item-${q.id}" onclick="scrollToExamQuestion(${q.id})">
+                        <div class="q-num-label">${idx + 1}</div>
+                        <div class="q-ans-label" id="sheet-ans-${q.id}">-</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div style="margin-top:auto; padding-top:20px;">
+                <button type="button" class="btn-primary" style="width:100%; padding:12px; font-weight:700; font-size:1rem;" onclick="submitStudentQuizExam(false)">
+                    🚀 Nộp Bài Thi
+                </button>
+            </div>
+        </div>
+    `;
+
+    renderMath(body);
+
+    document.getElementById('btn-submit-exam-quiz').onclick = () => submitStudentQuizExam(false);
+}
+
+window.handleStudentPickExamOption = function(qId, optIdx) {
+    studentExamAnswers[qId] = optIdx;
+    const optLabels = ['A', 'B', 'C', 'D'];
+
+    // Update buttons in question card
+    for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById(`opt-btn-${qId}-${i}`);
+        if (btn) {
+            if (i === optIdx) {
+                btn.classList.add('opt-correct');
+            } else {
+                btn.classList.remove('opt-correct');
+            }
+        }
+    }
+
+    // Update sheet item
+    const sheetItem = document.getElementById(`sheet-item-${qId}`);
+    const sheetAns = document.getElementById(`sheet-ans-${qId}`);
+    if (sheetItem && sheetAns) {
+        sheetItem.classList.add('answered');
+        sheetAns.textContent = optLabels[optIdx];
+    }
+
+    // Update counter
+    const answeredCount = Object.keys(studentExamAnswers).length;
+    const totalQ = currentExamData?.questions?.length || 0;
+    const counter = document.getElementById('exam-answered-counter');
+    if (counter) counter.textContent = `${answeredCount} / ${totalQ} câu`;
+};
+
+window.scrollToExamQuestion = function(qId) {
+    const el = document.getElementById(`student-q-${qId}`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-pulse');
+        setTimeout(() => el.classList.remove('highlight-pulse'), 1000);
+    }
+};
+
+async function submitStudentQuizExam(isAutoSubmit = false) {
+    const totalQ = currentExamData?.questions?.length || 0;
+    const answeredCount = Object.keys(studentExamAnswers).length;
+
+    if (!isAutoSubmit) {
+        if (answeredCount < totalQ) {
+            if (!confirm(`Bạn mới làm ${answeredCount}/${totalQ} câu hỏi. Bạn có chắc chắn muốn nộp bài thi ngay bây giờ?`)) {
+                return;
+            }
+        } else {
+            if (!confirm("Bạn đã hoàn thành toàn bộ câu hỏi. Xác nhận nộp bài thi?")) {
+                return;
+            }
+        }
+    }
+
+    clearInterval(examTimerInterval);
+    const timeSpent = examTimeTotalSeconds - examTimeRemaining;
+
+    const btnSubmitTop = document.getElementById('btn-submit-exam-quiz');
+    if (btnSubmitTop) {
+        btnSubmitTop.disabled = true;
+        btnSubmitTop.textContent = '⏳ Đang nộp...';
+    }
+
+    try {
+        const res = await apiPost(`/api/classroom/student/assignment/${currentStudentExamId}/submit-quiz`, {
+            answers: studentExamAnswers,
+            time_spent_seconds: timeSpent
+        });
+
+        showToast(`🎉 Đã nộp bài thành công! Bạn đạt ${res.score_10}/10 điểm.`);
+        document.getElementById('btn-submit-exam-quiz').style.display = 'none';
+        document.getElementById('quiz-timer-box').style.display = 'none';
+
+        renderExamResultReview({
+            ...currentExamData,
+            has_submitted: true,
+            score: res.score,
+            total_tests: res.total,
+            status: res.status,
+            submitted_at: new Date().toISOString(),
+            user_answers: studentExamAnswers,
+            questions: res.full_questions || currentExamData.questions
+        });
+
+        // Tải lại danh sách bài tập lớp học để cập nhật trạng thái
+        loadStudentAssignmentsList();
+        renderSidebar();
+
+    } catch (e) {
+        alert("Lỗi nộp bài thi: " + e.message);
+        if (btnSubmitTop) {
+            btnSubmitTop.disabled = false;
+            btnSubmitTop.textContent = 'Nộp Bài';
+        }
+    }
+}
+window.submitStudentQuizExam = submitStudentQuizExam;
+
+function renderExamResultReview(data) {
+    const body = document.getElementById('quiz-exam-body');
+    const questions = data.questions || [];
+    const userAnswers = data.user_answers || {};
+    const optLabels = ['A', 'B', 'C', 'D'];
+
+    const correctCount = data.score || 0;
+    const totalQ = data.total_tests || questions.length || 1;
+    const score10 = (correctCount * (10 / totalQ)).toFixed(1);
+
+    body.innerHTML = `
+        <div style="flex:1; overflow-y:auto; padding:24px 32px;">
+            <div class="quiz-result-hero">
+                <div style="font-size:2.5rem; margin-bottom:8px;">🏆</div>
+                <h2 style="margin:0; color:#fff; font-size:1.6rem;">KẾT QUẢ BÀI THI</h2>
+                <div class="quiz-result-score-val">${score10} <span style="font-size:1.4rem; color:var(--text-muted);">/ 10</span></div>
+                <div class="quiz-result-sub">
+                    Đúng <b>${correctCount} / ${totalQ} câu</b> (${Math.round((correctCount / totalQ) * 100)}%) • Đã nộp lúc ${new Date(data.submitted_at || Date.now()).toLocaleString('vi-VN')}
+                </div>
+            </div>
+
+            <h3 style="margin:0 0 16px; color:var(--text-primary); font-size:1.2rem;">🔍 Chi tiết từng câu hỏi & Lời giải:</h3>
+            
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                ${questions.map((q, idx) => {
+                    const userChoice = userAnswers[q.id];
+                    const isCorrect = (userChoice !== undefined && userChoice === q.answer);
+                    const isSkipped = userChoice === undefined;
+
+                    return `
+                        <div class="quiz-question-card ${isCorrect ? 'card-correct' : 'card-wrong'}" id="review-q-${q.id}">
+                            <div class="q-header">
+                                <span class="q-badge">Câu ${idx + 1} / ${questions.length}</span>
+                                <span class="q-status-tag ${isCorrect ? 'tag-success' : 'tag-danger'}">
+                                    ${isCorrect ? 'ĐÚNG (+0.5đ)' : (isSkipped ? 'CHƯA TRẢ LỜI (0đ)' : 'SAI (0đ)')}
+                                </span>
+                            </div>
+                            <h3 class="q-title">${escapeHtml(q.question)}</h3>
+                            <div class="q-options-list">
+                                ${q.options.map((opt, optIdx) => {
+                                    let optClass = 'quiz-opt';
+                                    let badge = '';
+                                    if (optIdx === q.answer) {
+                                        optClass += ' opt-correct';
+                                        badge = '<span class="opt-badge correct-badge">Đáp án đúng</span>';
+                                    } else if (optIdx === userChoice) {
+                                        optClass += ' opt-wrong';
+                                        badge = '<span class="opt-badge wrong-badge">Lựa chọn của bạn</span>';
+                                    }
+                                    return `
+                                        <div class="${optClass}">
+                                            <span class="opt-text"><b>${optLabels[optIdx]}.</b> ${escapeHtml(opt)}</span>
+                                            ${badge}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            ${q.explanation ? `
+                                <div class="quiz-explain-box" style="margin-top:14px;">
+                                    <div class="explain-box-title">💡 LỜI GIẢI CHI TIẾT:</div>
+                                    <div class="explain-box-content">${escapeHtml(q.explanation)}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+
+    renderMath(body);
+}
+

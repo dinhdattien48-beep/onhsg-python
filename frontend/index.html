@@ -736,6 +736,34 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=16"></script>
+    <!-- Student Online Quiz Exam Modal (Azota style) -->
+    <div class="modal-overlay hidden" id="modal-student-quiz">
+        <div class="modal-content modal-quiz-exam-content">
+            <div class="modal-classroom-header">
+                <div class="classroom-title-area">
+                    <span class="classroom-icon">📝</span>
+                    <div>
+                        <h2 id="quiz-exam-title">Đề Thi Trắc Nghiệm</h2>
+                        <p class="classroom-subtitle" id="quiz-exam-meta">Giáo viên phụ trách • Thời gian làm bài</p>
+                    </div>
+                </div>
+                <div class="quiz-exam-top-actions">
+                    <div class="quiz-timer-box" id="quiz-timer-box">
+                        <span class="timer-icon">⏱️</span>
+                        <span class="timer-value" id="quiz-timer-val">45:00</span>
+                    </div>
+                    <button class="btn-primary" id="btn-submit-exam-quiz" style="padding: 8px 20px; font-weight:700;">
+                        Nộp Bài
+                    </button>
+                    <span class="modal-close" onclick="closeStudentQuizModal()">×</span>
+                </div>
+            </div>
+            <div class="quiz-exam-body" id="quiz-exam-body">
+                <!-- Main quiz questions on left, answer sheet palette on right -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=20"></script>
 </body>
 </html>
