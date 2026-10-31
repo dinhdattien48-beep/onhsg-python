@@ -617,6 +617,35 @@ function renderSidebar() {
                     });
                 }
             });
+
+            // Mục nhỏ 2: Bài tập (nằm bên dưới lí thuyết)
+            makeSubFolder(body, {
+                icon: '📝',
+                label: 'Bài tập',
+                key: 'thpt_practice',
+                defaultOpen: false,
+                content(subBody) {
+                    const practiceTopics = [
+                        { id: "1", title: "1. Trắc nghiệm Mạng máy tính" },
+                        { id: "2", title: "2. Trắc nghiệm AI & Học máy" },
+                        { id: "3", title: "3. Trắc nghiệm CSDL & SQL" },
+                        { id: "4", title: "4. Trắc nghiệm HTML & CSS" },
+                        { id: "5", title: "5. Trắc nghiệm Bảo mật & An toàn" }
+                    ];
+                    
+                    practiceTopics.forEach(topic => {
+                        const link = document.createElement('button');
+                        const isPracticeActive = (currentStageId === 'thpt_practice_' + topic.id && !document.getElementById('problem-content')?.classList.contains('hidden'));
+                        link.className = `problem-link ${isPracticeActive ? 'active' : ''}`;
+                        link.innerHTML = `<span class="problem-status"></span> 📝 ${topic.title}`;
+                        link.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectTHPTPractice(topic.id);
+                        });
+                        subBody.appendChild(link);
+                    });
+                }
+            });
         }
     });
 
@@ -661,7 +690,19 @@ function configureEditorForTopic(topicId) {
 
     const defaultPyCode = '# Viết code Python ở đây\nimport sys\ninput = sys.stdin.readline\n\n';
 
-    if (topicId === "3") {
+    if (topicId === 'quiz') {
+        if (expandBtn) {
+            expandBtn.style.display = '';
+            expandBtn.innerHTML = '▶ Nháp / Code';
+        }
+        if (editorTitleText) editorTitleText.innerText = 'Nháp / Thử nghiệm';
+        if (tabProblem) tabProblem.style.display = '';
+        if (tabAi) tabAi.style.display = 'none';
+        if (panelRight && !panelRight.classList.contains('collapsed')) {
+            const toggleBtn = document.getElementById('toggle-editor-panel');
+            if (toggleBtn) toggleBtn.click();
+        }
+    } else if (topicId === "3") {
         if (expandBtn) expandBtn.innerHTML = '▲ Làm Bài';
         if (editorTitleText) editorTitleText.innerText = 'Làm Bài';
         if (editorLangBadge) editorLangBadge.style.display = 'none';
@@ -731,6 +772,259 @@ async function selectTHPTTheory(topicId) {
     switchView('learn');
     renderSidebar();
 }
+
+// ============================================================================
+// THPT MULTIPLE-CHOICE QUIZ PRACTICE (20 CÂU CÓ BẪY / CHUYÊN ĐỀ)
+// ============================================================================
+
+let currentQuizData = null;
+
+async function selectTHPTPractice(topicId) {
+    currentStageId = 'thpt_practice_' + topicId;
+    currentProblemId = 'thpt_quiz_' + topicId;
+
+    document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('panel-tabs')?.classList.remove('hidden');
+    document.getElementById('theory-content').classList.add('hidden');
+    document.getElementById('ai-content').classList.add('hidden');
+    document.getElementById('problem-content').classList.remove('hidden');
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === 'problem');
+    });
+
+    configureEditorForTopic('quiz');
+
+    document.getElementById('problem-content').innerHTML = `
+        <div style="text-align: center; color: #a6adc8; padding: 48px 20px;">
+            <div style="font-size: 2rem; margin-bottom: 12px; animation: spin 1s linear infinite;">⏳</div>
+            <div style="font-size: 1.1rem; font-weight: 600; color: #f8fafc;">Đang tải 20 câu hỏi trắc nghiệm chuyên đề ${escapeHtml(topicId)}...</div>
+            <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 6px;">Hệ thống đang nạp các câu hỏi bẫy thi và phân tích lỗi sai</div>
+        </div>
+    `;
+
+    try {
+        const quizData = await apiGet(`/api/thpt/practice/${topicId}`);
+        renderTHPTQuiz(quizData);
+    } catch (e) {
+        document.getElementById('problem-content').innerHTML = `
+            <div style="color: #ef4444; text-align: center; padding: 48px 20px;">
+                <div style="font-size: 2rem; margin-bottom: 8px;">⚠️</div>
+                <div style="font-weight: 600;">Lỗi tải bài tập trắc nghiệm: ${escapeHtml(e.message)}</div>
+            </div>
+        `;
+    }
+
+    switchView('learn');
+    renderSidebar();
+}
+window.selectTHPTPractice = selectTHPTPractice;
+
+function renderTHPTQuiz(quizData) {
+    currentQuizData = quizData;
+    const topicId = quizData.topic_id;
+    const questions = quizData.questions || [];
+
+    // Lấy đáp án đã lưu từ localStorage
+    let savedAnswers = {};
+    try {
+        const raw = localStorage.getItem(`thpt_quiz_answers_${topicId}`);
+        if (raw) savedAnswers = JSON.parse(raw);
+    } catch (e) {}
+
+    const container = document.getElementById('problem-content');
+    
+    // Thống kê kết quả
+    let answeredCount = 0;
+    let correctCount = 0;
+    questions.forEach(q => {
+        if (savedAnswers[q.id] !== undefined) {
+            answeredCount++;
+            if (savedAnswers[q.id] === q.answer) correctCount++;
+        }
+    });
+
+    const score = (correctCount * (10 / (questions.length || 1))).toFixed(1);
+
+    // Bảng chuyển câu hỏi nhanh (Question Palette)
+    let paletteHtml = '';
+    questions.forEach(q => {
+        let statusClass = 'unanswered';
+        let labelText = `${q.id}`;
+        if (savedAnswers[q.id] !== undefined) {
+            if (savedAnswers[q.id] === q.answer) {
+                statusClass = 'correct';
+                labelText = `${q.id} ✓`;
+            } else {
+                statusClass = 'wrong';
+                labelText = `${q.id} ✗`;
+            }
+        }
+        paletteHtml += `
+            <button class="quiz-nav-btn ${statusClass}" onclick="scrollToQuizQuestion(${q.id})" id="q-nav-${q.id}" title="Chuyển đến câu ${q.id}">
+                ${labelText}
+            </button>
+        `;
+    });
+
+    // Danh sách 20 câu hỏi
+    let questionsHtml = '';
+    questions.forEach(q => {
+        const userChoice = savedAnswers[q.id];
+        const isAnswered = userChoice !== undefined;
+        const isCorrect = userChoice === q.answer;
+
+        let optionsHtml = '';
+        q.options.forEach((opt, idx) => {
+            let optClass = 'quiz-opt';
+            let iconBadge = '';
+            
+            if (isAnswered) {
+                if (idx === q.answer) {
+                    optClass += ' opt-correct';
+                    iconBadge = '<span class="opt-badge correct-badge">✅ Đáp án đúng</span>';
+                } else if (idx === userChoice) {
+                    optClass += ' opt-wrong';
+                    iconBadge = '<span class="opt-badge wrong-badge">❌ Lựa chọn của bạn</span>';
+                }
+            } else {
+                optClass += ' opt-clickable';
+            }
+
+            optionsHtml += `
+                <button class="${optClass}" onclick="handleQuizAnswer('${topicId}', ${q.id}, ${idx})" ${isAnswered ? 'disabled' : ''}>
+                    <span class="opt-text">${escapeHtml(opt)}</span>
+                    ${iconBadge}
+                </button>
+            `;
+        });
+
+        // Hộp phân tích & bẫy thi
+        let feedbackHtml = '';
+        if (isAnswered) {
+            feedbackHtml = `
+                <div class="quiz-feedback">
+                    <div class="quiz-result-header">
+                        ${isCorrect ? '🎉 <span style="color:#10b981;">Chính xác! Em nắm kiến thức rất chắc.</span>' : '⚠️ <span style="color:#ef4444;">Chưa chính xác! Hãy đọc kỹ bẫy thi bên dưới để tránh mất điểm.</span>'}
+                    </div>
+                    ${q.trap ? `
+                        <div class="quiz-trap-box">
+                            <div class="trap-box-title">⚠️ BẪY THƯỜNG GẶP & LỖI SAI KINH ĐIỂN:</div>
+                            <div class="trap-box-content">${escapeHtml(q.trap)}</div>
+                        </div>
+                    ` : ''}
+                    <div class="quiz-explain-box">
+                        <div class="explain-box-title">💡 GIẢI THÍCH CHI TIẾT (CHUẨN GDPT 2018):</div>
+                        <div class="explain-box-content">${escapeHtml(q.explanation)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        questionsHtml += `
+            <div class="quiz-question-card ${isAnswered ? (isCorrect ? 'card-correct' : 'card-wrong') : ''}" id="quiz-q-${q.id}">
+                <div class="q-header">
+                    <span class="q-badge">Câu ${q.id} / ${questions.length}</span>
+                    ${isAnswered ? (isCorrect ? '<span class="q-status-tag tag-success">Đúng (+0.5đ)</span>' : '<span class="q-status-tag tag-danger">Sai (0đ)</span>') : '<span class="q-status-tag tag-pending">Chưa làm</span>'}
+                </div>
+                <h3 class="q-title">${escapeHtml(q.question)}</h3>
+                <div class="q-options-list">
+                    ${optionsHtml}
+                </div>
+                ${feedbackHtml}
+            </div>
+        `;
+    });
+
+    container.innerHTML = `
+        <div class="thpt-quiz-container">
+            <div class="quiz-header-banner">
+                <div class="quiz-badge-strip">
+                    <span class="q-strip-badge">📑 THI TỐT NGHIỆP THPT QUỐC GIA</span>
+                    <span class="q-strip-tag">20 CÂU HỎI TRỌNG TÂM CÓ BẪY</span>
+                </div>
+                <h1 class="quiz-main-title">${escapeHtml(quizData.topic_title)}</h1>
+                <p class="quiz-main-desc">${escapeHtml(quizData.description)}</p>
+
+                <div class="quiz-live-stats">
+                    <div class="quiz-stat-box">
+                        <div class="q-stat-val" id="quiz-answered-count">${answeredCount} / ${questions.length}</div>
+                        <div class="q-stat-lbl">Đã trả lời</div>
+                    </div>
+                    <div class="quiz-stat-box">
+                        <div class="q-stat-val" style="color: #10b981;" id="quiz-correct-count">${correctCount}</div>
+                        <div class="q-stat-lbl">Số câu đúng</div>
+                    </div>
+                    <div class="quiz-stat-box">
+                        <div class="q-stat-val" style="color: #38bdf8;" id="quiz-score">${score}</div>
+                        <div class="q-stat-lbl">Điểm số (/10)</div>
+                    </div>
+                    <div class="quiz-actions-group">
+                        <button class="quiz-btn-reset" onclick="resetTHPTQuiz('${topicId}')" title="Xóa toàn bộ kết quả đã chọn để luyện lại">
+                            🔄 Làm lại từ đầu
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quiz-palette-wrapper">
+                    <div class="palette-label">Bảng câu hỏi nhanh (Bấm số để cuộn ngay tới câu):</div>
+                    <div class="quiz-palette">
+                        ${paletteHtml}
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-questions-list">
+                ${questionsHtml}
+            </div>
+        </div>
+    `;
+}
+
+function handleQuizAnswer(topicId, questionId, optionIdx) {
+    let savedAnswers = {};
+    try {
+        const raw = localStorage.getItem(`thpt_quiz_answers_${topicId}`);
+        if (raw) savedAnswers = JSON.parse(raw);
+    } catch (e) {}
+
+    savedAnswers[questionId] = optionIdx;
+    try {
+        localStorage.setItem(`thpt_quiz_answers_${topicId}`, JSON.stringify(savedAnswers));
+    } catch (e) {}
+
+    if (currentQuizData && currentQuizData.topic_id === topicId) {
+        renderTHPTQuiz(currentQuizData);
+        setTimeout(() => {
+            scrollToQuizQuestion(questionId);
+        }, 50);
+    }
+}
+window.handleQuizAnswer = handleQuizAnswer;
+
+function scrollToQuizQuestion(qId) {
+    const el = document.getElementById(`quiz-q-${qId}`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-pulse');
+        setTimeout(() => el.classList.remove('highlight-pulse'), 1200);
+    }
+}
+window.scrollToQuizQuestion = scrollToQuizQuestion;
+
+function resetTHPTQuiz(topicId) {
+    if (confirm("Em có chắc chắn muốn xóa toàn bộ kết quả đã chọn của chuyên đề này để làm lại từ đầu không?")) {
+        try {
+            localStorage.removeItem(`thpt_quiz_answers_${topicId}`);
+        } catch (e) {}
+        if (currentQuizData && currentQuizData.topic_id === topicId) {
+            renderTHPTQuiz(currentQuizData);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('problem-content')?.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+}
+window.resetTHPTQuiz = resetTHPTQuiz;
 
 async function selectStage(stageId) {
     currentStageId = stageId;
@@ -1326,6 +1620,40 @@ function renderRoadmap() {
             });
             theorySec.appendChild(theoryGrid);
             body.appendChild(theorySec);
+
+            // Section 2: Bài tập trắc nghiệm (100 câu chia 5 chuyên đề)
+            const practiceSec = document.createElement('div');
+            practiceSec.className = 'roadmap-subsection';
+            practiceSec.style.marginTop = '28px';
+            practiceSec.innerHTML = `
+                <div class="roadmap-subsection-header">
+                    <span class="rss-icon">📝</span>
+                    <span class="rss-title">Bài Tập Trắc Nghiệm</span>
+                    <span class="rss-desc">100 câu hỏi trọng tâm bám sát ma trận đề thi & bẫy kinh điển (20 câu/chuyên đề)</span>
+                </div>
+            `;
+            const practiceGrid = document.createElement('div');
+            const practiceTopics = [
+                { id: "1", title: "Trắc nghiệm Mạng máy tính" },
+                { id: "2", title: "Trắc nghiệm Trí tuệ nhân tạo (AI)" },
+                { id: "3", title: "Trắc nghiệm CSDL & SQL" },
+                { id: "4", title: "Trắc nghiệm HTML & CSS" },
+                { id: "5", title: "Trắc nghiệm Bảo mật & An toàn" }
+            ];
+            practiceTopics.forEach(topic => {
+                const stageEl = document.createElement('div');
+                stageEl.className = 'roadmap-stage';
+                stageEl.innerHTML = `
+                    <div class="stage-number">${topic.id}</div>
+                    <div class="stage-card" onclick="goToTHPTPractice('${topic.id}')">
+                        <div class="stage-card-title">📝 Chuyên đề ${topic.id}: ${topic.title}</div>
+                        <div class="stage-card-desc">20 câu trắc nghiệm • Chấm điểm & Giải thích bẫy thi</div>
+                    </div>
+                `;
+                practiceGrid.appendChild(stageEl);
+            });
+            practiceSec.appendChild(practiceGrid);
+            body.appendChild(practiceSec);
         }
     });
 
@@ -1358,6 +1686,11 @@ function goToStage(stageId) {
 function goToTHPTTheory(topicId) {
     switchView('learn');
     selectTHPTTheory(topicId);
+}
+
+function goToTHPTPractice(topicId) {
+    switchView('learn');
+    selectTHPTPractice(topicId);
 }
 
 // ============================================================================
@@ -1599,6 +1932,7 @@ document.head.appendChild(style);
 window.toggleTestDetail = toggleTestDetail;
 window.goToStage = goToStage;
 window.goToTHPTTheory = goToTHPTTheory;
+window.goToTHPTPractice = goToTHPTPractice;
 
 // ============================================================================
 // EDITOR PANEL — COLLAPSE / EXPAND & DRAG RESIZE

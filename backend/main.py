@@ -161,6 +161,23 @@ async def list_stages():
     return {"stages": result}
 
 
+@app.get("/api/thpt/practice")
+async def get_all_thpt_practice_summaries():
+    """Lấy danh sách tóm tắt tất cả các chuyên đề trắc nghiệm THPT."""
+    from thpt_quiz_data import get_all_quiz_summaries
+    return {"quizzes": get_all_quiz_summaries()}
+
+
+@app.get("/api/thpt/practice/{topic_id}")
+async def get_thpt_practice(topic_id: str):
+    """Lấy danh sách 20 câu hỏi trắc nghiệm kèm bẫy & giải thích cho chuyên đề THPT."""
+    from thpt_quiz_data import get_quiz_for_topic
+    data = get_quiz_for_topic(topic_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài tập trắc nghiệm cho chuyên đề này")
+    return data
+
+
 @app.get("/api/thpt/{topic_id}")
 async def get_thpt_theory(topic_id: str):
     """Lấy nội dung lý thuyết Ôn TN THPT QGia theo từng chuyên đề."""
