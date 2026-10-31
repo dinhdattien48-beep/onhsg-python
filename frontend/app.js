@@ -2156,9 +2156,16 @@ async function sendOtp() {
     
     statusLabel.textContent = "Đang gửi...";
     try {
-        await apiPost('/api/auth/send-otp', { email });
-        statusLabel.textContent = "Đã gửi mã! Kiểm tra hộp thư (cả mục Spam).";
-        statusLabel.style.color = "#10b981";
+        const res = await apiPost('/api/auth/send-otp', { email });
+        if (res && res.otp_fallback) {
+            const regOtpInput = document.getElementById('reg-otp');
+            if (regOtpInput) regOtpInput.value = res.otp_fallback;
+            statusLabel.textContent = "Máy chủ đám mây hạn chế gửi mail ra ngoài. Hệ thống đã tự điền mã xác thực vào ô bên dưới!";
+            statusLabel.style.color = "#38bdf8";
+        } else {
+            statusLabel.textContent = "Đã gửi mã! Kiểm tra hộp thư (cả mục Spam).";
+            statusLabel.style.color = "#10b981";
+        }
     } catch (e) {
         statusLabel.textContent = e.message;
         statusLabel.style.color = "#ef4444";

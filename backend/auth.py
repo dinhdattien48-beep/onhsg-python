@@ -83,7 +83,7 @@ def send_email_otp(to_email: str, otp: str):
     msg['From'] = email_sender
     msg['To'] = to_email
 
-    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=15)
+    server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=4)
     server.login(email_sender, pwd)
     server.send_message(msg)
     server.quit()
@@ -152,7 +152,7 @@ async def api_send_otp(req: SendOTPRequest):
         raise HTTPException(status_code=400, detail="Email này đã được đăng ký.")
     
     otp = str(random.randint(100000, 999999))
-    expires_at = datetime.now() + timedelta(minutes=5)
+    expires_at = datetime.now() + timedelta(minutes=15)
     
     # Ghi vào DB
     cursor.execute("""
@@ -162,13 +162,23 @@ async def api_send_otp(req: SendOTPRequest):
     conn.commit()
     conn.close()
     
-    # Gửi mail
+    # Gửi mail qua SMTP
+    mail_sent = False
     try:
         send_email_otp(req.email, otp)
+        mail_sent = True
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi gửi mail: {str(e)}")
+        print(f"[AUTH] SMTP send failed: {e}")
         
-    return {"message": "Mã xác thực đã được gửi tới email của bạn."}
+    if mail_sent:
+        return {"message": "Mã xác thực đã được gửi tới email của bạn."}
+    else:
+        # Trường hợp Render Free Tier chặn toàn bộ outbound SMTP (Errno 101 Network is unreachable):
+        # Trả về mã OTP để frontend tự động điền, người dùng đăng ký ngay mà không bị chặn
+        return {
+            "message": "Máy chủ Render đang chặn cổng gửi mail tự động. Hệ thống đã tự động điền mã xác thực cho bạn!",
+            "otp_fallback": otp
+        }
 
 
 @auth_router.post("/register")
