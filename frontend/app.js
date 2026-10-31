@@ -133,11 +133,14 @@ function initEventListeners() {
     document.getElementById('debug-code')?.addEventListener('click', startDebug);
     document.getElementById('submit-code').addEventListener('click', submitCode);
 
-    // Start button
-    document.getElementById('start-learning').addEventListener('click', () => {
+    // Start buttons
+    document.getElementById('start-learning')?.addEventListener('click', () => {
         if (stagesData.length > 0) {
             selectStage(1);
         }
+    });
+    document.getElementById('start-thpt')?.addEventListener('click', () => {
+        selectTHPTTheory('1');
     });
 
     // Input toggle
@@ -366,6 +369,7 @@ function switchTab(tab) {
     });
 
     document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('panel-tabs')?.classList.remove('hidden');
     document.getElementById('theory-content').classList.add('hidden');
     document.getElementById('problem-content').classList.add('hidden');
     document.getElementById('ai-content').classList.add('hidden');
@@ -378,6 +382,19 @@ function switchTab(tab) {
         document.getElementById('ai-content').classList.remove('hidden');
     }
 }
+
+function showWelcomeScreen() {
+    switchView('learn');
+    document.getElementById('welcome-screen')?.classList.remove('hidden');
+    document.getElementById('panel-tabs')?.classList.add('hidden');
+    document.getElementById('theory-content')?.classList.add('hidden');
+    document.getElementById('problem-content')?.classList.add('hidden');
+    document.getElementById('ai-content')?.classList.add('hidden');
+    currentStageId = null;
+    currentProblemId = null;
+    renderSidebar();
+}
+window.showWelcomeScreen = showWelcomeScreen;
 
 const STAGE_PRACTICE_TITLES = {
     1: "Bài tập về Nhập xuất & Biến cơ bản",
@@ -677,6 +694,7 @@ async function selectTHPTTheory(topicId) {
     currentProblemId = null;
 
     document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('panel-tabs')?.classList.remove('hidden');
     document.getElementById('problem-content').classList.add('hidden');
     document.getElementById('ai-content').classList.add('hidden');
     document.getElementById('theory-content').classList.remove('hidden');
@@ -730,6 +748,7 @@ async function selectStage(stageId) {
 
     // Show theory tab
     document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('panel-tabs')?.classList.remove('hidden');
     document.getElementById('theory-content').classList.remove('hidden');
     document.getElementById('problem-content').classList.add('hidden');
     document.getElementById('ai-content').classList.add('hidden');
@@ -784,6 +803,7 @@ async function selectProblem(stageId, problemId) {
 
     // Show problem tab
     document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('panel-tabs')?.classList.remove('hidden');
     document.getElementById('theory-content').classList.add('hidden');
     document.getElementById('problem-content').classList.remove('hidden');
     document.getElementById('ai-content').classList.add('hidden');
@@ -2169,6 +2189,7 @@ async function openAssignmentProblem(assignment) {
 
     // Switch to problem tab
     document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('panel-tabs')?.classList.remove('hidden');
     document.getElementById('theory-content').classList.add('hidden');
     document.getElementById('problem-content').classList.remove('hidden');
     document.getElementById('ai-content').classList.add('hidden');

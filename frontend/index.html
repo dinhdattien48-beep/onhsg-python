@@ -25,7 +25,7 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css?v=15">
 </head>
 <body>
     <!-- ===== HEADER ===== -->
@@ -38,7 +38,7 @@
         <div class="header-center">
             <nav class="header-nav">
                 <button class="nav-btn" data-view="learn" id="nav-learn">
-                    <span class="nav-icon">🏆</span> Ôn HSG
+                    <span class="nav-icon">💻</span> Học tập
                 </button>
                 <button class="nav-btn active" data-view="roadmap" id="nav-roadmap">
                     <span class="nav-icon">📖</span> Lộ trình
@@ -75,7 +75,7 @@
 
         <!-- LEFT PANEL: Theory / Problem -->
         <section class="panel-left" id="panel-left">
-            <div class="panel-tabs">
+            <div class="panel-tabs hidden" id="panel-tabs">
                 <button class="tab-btn active" data-tab="theory" id="tab-theory">📖 Lý thuyết</button>
                 <button class="tab-btn" data-tab="problem" id="tab-problem">📝 Đề bài</button>
                 <button class="tab-btn" data-tab="ai-feedback" id="tab-ai">🤖 AI Mentor</button>
@@ -83,28 +83,119 @@
             <div class="panel-content" id="left-content">
                 <!-- Welcome screen -->
                 <div class="welcome-screen" id="welcome-screen">
-                    <div class="welcome-icon">🎓</div>
-                    <h1>Chào mừng đến HSG Python!</h1>
-                    <p>Nền tảng luyện thi Học Sinh Giỏi Tin học bằng Python</p>
-                    <p class="welcome-sub">Bắt đầu từ con số 0 → Thi HSG tự tin 💪</p>
-                    <div class="welcome-features">
-                        <div class="feature-card">
-                            <span class="feature-icon">📚</span>
-                            <h3>Đa dạng chủ đề</h3>
-                            <p>Ôn HSG, Thi THPT, Luyện đề & BT GV giao</p>
+                    <div class="welcome-hero-badge">
+                        <span class="hero-badge-dot"></span>
+                        <span>Cổng Luyện Thi Tin Học Toàn Diện • Chuẩn GDPT 2018</span>
+                    </div>
+
+                    <h1 class="welcome-title">Chinh Phục <span class="gradient-text">Môn Tin Học</span></h1>
+                    <p class="welcome-lead">
+                        Hệ thống bồi dưỡng kiến thức toàn diện: <strong>Luyện thi Học sinh Giỏi (HSG)</strong> chuyên sâu & <strong>Ôn thi Tốt nghiệp THPT Quốc gia</strong> với giáo trình cô đọng, môi trường code tương tác và trợ lý AI phân tích tư duy.
+                    </p>
+
+                    <!-- HAI PHÂN HỆ ĐÀO TẠO CHÍNH -->
+                    <div class="welcome-tracks-grid">
+                        <!-- Track 1: Ôn HSG -->
+                        <div class="track-card track-hsg" onclick="selectStage(1)">
+                            <div class="track-header">
+                                <span class="track-tag tag-hsg">🏆 Chuyên Đề Thuật Toán</span>
+                                <span class="track-arrow">→</span>
+                            </div>
+                            <h3 class="track-title">Luyện Thi Học Sinh Giỏi (HSG)</h3>
+                            <p class="track-desc">
+                                Lộ trình 8 chặng từ cơ bản đến nâng cao: Cấu trúc dữ liệu, Hai con trỏ, Prefix Sum, Quy hoạch động, Đệ quy và vũ khí Python Built-in tối ưu thời gian làm bài.
+                            </p>
+                            <div class="track-meta">
+                                <span class="track-chip">8 Chặng lý thuyết</span>
+                                <span class="track-chip">24 Bài tập có test</span>
+                                <span class="track-chip">Chấm 10 test tự động</span>
+                            </div>
+                            <button class="track-action-btn btn-hsg" id="start-learning" onclick="event.stopPropagation(); selectStage(1);">
+                                Vào Ôn Thi HSG →
+                            </button>
                         </div>
-                        <div class="feature-card">
-                            <span class="feature-icon">🔫</span>
-                            <h3>Góc Vũ Khí Python</h3>
-                            <p>Học hàm Built-in tối ưu code thi HSG</p>
-                        </div>
-                        <div class="feature-card">
-                            <span class="feature-icon">⚡</span>
-                            <h3>Chấm 10 test tự động</h3>
-                            <p>Phản hồi tức thì với AI Mentor</p>
+
+                        <!-- Track 2: Ôn TN THPT QGia -->
+                        <div class="track-card track-thpt" onclick="selectTHPTTheory('1')">
+                            <div class="track-header">
+                                <span class="track-tag tag-thpt">📑 Trọng Tâm THPT QGia</span>
+                                <span class="track-arrow">→</span>
+                            </div>
+                            <h3 class="track-title">Ôn Thi Tốt Nghiệp THPT Quốc Gia</h3>
+                            <p class="track-desc">
+                                5 chuyên đề trọng tâm bám sát ma trận đề thi: Mạng máy tính, Trí tuệ nhân tạo (AI), CSDL & SQL thực chiến, Lập trình Web HTML/CSS và An toàn bảo mật.
+                            </p>
+                            <div class="track-meta">
+                                <span class="track-chip">5 Chuyên đề trọng tâm</span>
+                                <span class="track-chip">Thực hành SQL & HTML</span>
+                                <span class="track-chip">Bẫy trắc nghiệm hay gặp</span>
+                            </div>
+                            <button class="track-action-btn btn-thpt" id="start-thpt" onclick="event.stopPropagation(); selectTHPTTheory('1');">
+                                Vào Ôn Thi THPT →
+                            </button>
                         </div>
                     </div>
-                    <button class="start-btn" id="start-learning">🚀 Bắt đầu học ngay!</button>
+
+                    <!-- TÍNH NĂNG NỔI BẬT -->
+                    <div class="welcome-features-row">
+                        <div class="feature-item" onclick="openClassroomModal()">
+                            <div class="feature-item-icon">🏫</div>
+                            <div class="feature-item-content">
+                                <h4>Không Gian Lớp Học</h4>
+                                <p>Nhận bài tập giáo viên giao, nộp code trực tiếp và theo dõi kết quả tự động.</p>
+                            </div>
+                        </div>
+                        <div class="feature-item" onclick="switchView('roadmap')">
+                            <div class="feature-item-icon">🗺️</div>
+                            <div class="feature-item-content">
+                                <h4>Bản Đồ Lộ Trình</h4>
+                                <p>Theo dõi tổng quan tiến độ các chặng HSG và chuyên đề THPT trên một sơ đồ.</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-item-icon">🤖</div>
+                            <div class="feature-item-content">
+                                <h4>AI Mentor Hướng Dẫn</h4>
+                                <p>Phân tích logic code, giải thích test case bị sai và gợi ý cách tối ưu độ phức tạp.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HÀNG NÚT ĐIỀU HƯỚNG NHANH -->
+                    <div class="welcome-action-bar">
+                        <button class="welcome-btn-primary" onclick="switchView('roadmap')">
+                            🗺️ Xem Toàn Bộ Lộ Trình (Roadmap)
+                        </button>
+                        <button class="welcome-btn-secondary" onclick="selectStage(1)">
+                            🏆 Bắt đầu Chặng 1 HSG
+                        </button>
+                        <button class="welcome-btn-secondary" onclick="selectTHPTTheory('1')">
+                            📑 Học Chuyên đề 1 THPT
+                        </button>
+                    </div>
+
+                    <!-- THƯỚC ĐO CHỈ SỐ -->
+                    <div class="welcome-stats-strip">
+                        <div class="stat-pill">
+                            <span class="stat-num">8</span>
+                            <span class="stat-label">Chặng Thuật Toán HSG</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-pill">
+                            <span class="stat-num">5</span>
+                            <span class="stat-label">Chuyên Đề Trọng Tâm THPT</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-pill">
+                            <span class="stat-num">10</span>
+                            <span class="stat-label">Test Case / Bài Nộp</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-pill">
+                            <span class="stat-num">100%</span>
+                            <span class="stat-label">Chấm Code Tự Động</span>
+                        </div>
+                    </div>
                 </div>
                 <!-- Theory content -->
                 <div class="content-section hidden" id="theory-content"></div>
@@ -645,6 +736,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=13"></script>
+    <script src="/static/app.js?v=15"></script>
 </body>
 </html>
