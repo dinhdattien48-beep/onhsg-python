@@ -133,7 +133,7 @@ async def serve_frontend():
     """Serve trang chủ frontend."""
     index_path = os.path.join(FRONTEND_DIR, "index.html")
     if os.path.exists(index_path):
-        return FileResponse(index_path)
+        return FileResponse(index_path, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     return {"message": "HSG Python API - Frontend chưa được cài đặt"}
 
 
