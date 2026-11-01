@@ -2901,7 +2901,7 @@ async function loadTeacherAssignmentsPane(cls) {
                 <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">Bài tập & Đề thi đã giao (${assignments.length})</h3>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
                     <button class="btn-primary" id="btn-toggle-create-quiz" style="background:#4f46e5; border-color:#6366f1; width:auto; padding:8px 18px; margin:0;">
-                        📑 Tải Đề Trắc Nghiệm (Word / Azota)
+                        📑 Tải Đề Trắc Nghiệm (File Word / Văn Bản)
                     </button>
                     <button class="btn-secondary" id="btn-toggle-create-assignment" style="width:auto; padding:8px 18px; margin:0;">
                         💻 Giao Bài Code (Python)
@@ -2909,17 +2909,17 @@ async function loadTeacherAssignmentsPane(cls) {
                 </div>
             </div>
 
-            <!-- FORM 1: TẢI ĐỀ THI TRẮC NGHIỆM CHUẨN AZOTA (WORD / TEXT) -->
+            <!-- FORM 1: TẢI ĐỀ THI TRẮC NGHIỆM (WORD / TEXT) -->
             <div class="create-assignment-box hidden" id="box-create-quiz" style="border-color:#6366f1; background:rgba(99,102,241,0.04);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                    <h3 style="margin:0; color:#818cf8; font-size:1.15rem;">📑 Tạo Đề Thi Trắc Nghiệm (Chuẩn Azota)</h3>
+                    <h3 style="margin:0; color:#818cf8; font-size:1.15rem;">📑 Tạo Đề Thi Trắc Nghiệm Tự Động</h3>
                     <span style="font-size:0.8rem; background:rgba(99,102,241,0.2); color:#c7d2fe; padding:3px 8px; border-radius:4px;">Tự động nhận diện đáp án</span>
                 </div>
 
-                <!-- Hướng dẫn định dạng chuẩn Azota -->
+                <!-- Hướng dẫn định dạng đề thi -->
                 <div class="azota-guide-card">
                     <div class="azota-guide-header" id="btn-toggle-azota-guide">
-                        <span>💡 Hướng dẫn chỉnh file Word / Soạn đề chuẩn Azota (Bấm để xem)</span>
+                        <span>💡 Hướng dẫn định dạng file Word / Soạn đề thi (Bấm để xem)</span>
                         <span id="azota-guide-arrow">▼</span>
                     </div>
                     <div class="azota-guide-body hidden" id="azota-guide-body">
@@ -2944,7 +2944,7 @@ async function loadTeacherAssignmentsPane(cls) {
                             <div>
                                 <b>Cách nhập Đáp Án Đúng (3 cách linh hoạt):</b>
                                 <ul style="margin:6px 0 0 20px; line-height:1.6;">
-                                    <li><b>Cách 1 (Chuẩn Word Azota):</b> Trong file Word (.docx), <u>gạch chân</u> chữ cái đáp án đúng (ví dụ: <u>A.</u> hoặc <u>A</u>) hoặc <b>in đậm</b> chữ cái đáp án đúng.</li>
+                                    <li><b>Cách 1 (Đánh dấu trực tiếp):</b> Trong file Word (.docx), <u>gạch chân</u> chữ cái đáp án đúng (ví dụ: <u>A.</u> hoặc <u>A</u>) hoặc <b>in đậm</b> chữ cái đáp án đúng.</li>
                                     <li><b>Cách 2 (Bảng đáp án cuối đề):</b> Đặt ở cuối file đoạn: <code>ĐÁP ÁN: 1.A  2.B  3.C  4.D...</code> hoặc <code>1-A, 2-B...</code></li>
                                     <li><b>Cách 3 (Ghi trực tiếp):</b> Thêm dòng <code>Đáp án: A</code> (hoặc <code>Chọn A</code>) ngay dưới mỗi câu.</li>
                                 </ul>
@@ -2960,7 +2960,7 @@ async function loadTeacherAssignmentsPane(cls) {
 
                         <div class="azota-sample-box">
                             <button type="button" class="azota-btn-copy-sample" id="btn-copy-azota-sample">Copy mẫu đề</button>
-<span style="color:#94a3b8;">/* MẪU ĐỀ THI TRẮC NGHIỆM CHUẨN AZOTA: */</span>
+<span style="color:#94a3b8;">/* MẪU ĐỀ THI TRẮC NGHIỆM TIÊU CHUẨN: */</span>
 Câu 1: Thiết bị nào sau đây dùng để kết nối mạng cục bộ LAN?
 A. Chuột máy tính
 B. Switch
@@ -2991,7 +2991,7 @@ Lời giải: HTTPS (Hypertext Transfer Protocol Secure) sử dụng SSL/TLS đ�
                     <div class="azota-dropzone" id="azota-dropzone">
                         <div class="dropzone-icon">📁</div>
                         <div class="dropzone-title">Kéo & thả file Word (.docx) vào đây, hoặc nhấn để chọn file</div>
-                        <div class="dropzone-sub">Hệ thống tự động phát hiện đáp án gạch chân chuẩn Azota</div>
+                        <div class="dropzone-sub">Hệ thống tự động nhận diện câu hỏi và đáp án gạch chân / in đậm</div>
                         <input type="file" id="azota-file-input" accept=".docx" style="display:none;">
                     </div>
                     <div id="azota-selected-file-name" style="font-size:0.9rem; color:#34d399; font-weight:600; margin-bottom:12px; display:none;"></div>
@@ -3234,7 +3234,7 @@ D. SMTP
 Đáp án: C
 Lời giải: HTTPS (Hypertext Transfer Protocol Secure) sử dụng SSL/TLS để mã hóa dữ liệu.`;
         navigator.clipboard.writeText(sampleText);
-        showToast('📋 Đã copy mẫu đề thi chuẩn Azota vào clipboard!');
+        showToast('📋 Đã copy mẫu đề thi tiêu chuẩn vào clipboard!');
         const txtArea = document.getElementById('azota-raw-text');
         if (txtArea) txtArea.value = sampleText;
     });
@@ -3340,7 +3340,7 @@ Lời giải: HTTPS (Hypertext Transfer Protocol Secure) sử dụng SSL/TLS đ�
 
             currentParsedQuizQuestions = result.questions || [];
             if (currentParsedQuizQuestions.length === 0) {
-                alert("Không bóc tách được câu hỏi nào. Vui lòng xem lại hướng dẫn định dạng chuẩn Azota.");
+                alert("Không bóc tách được câu hỏi nào. Vui lòng xem lại hướng dẫn định dạng đề thi.");
                 return;
             }
 
@@ -3437,7 +3437,7 @@ async function publishAzotaQuizExam(cls) {
 
         await apiPost('/api/classroom/teacher/assignments/quiz', {
             title,
-            description: `Đề thi trắc nghiệm chuẩn Azota gồm ${currentParsedQuizQuestions.length} câu hỏi. Thời gian làm bài: ${duration} phút.`,
+            description: `Đề thi trắc nghiệm gồm ${currentParsedQuizQuestions.length} câu hỏi. Thời gian làm bài: ${duration} phút.`,
             duration_minutes: duration,
             deadline,
             questions: currentParsedQuizQuestions

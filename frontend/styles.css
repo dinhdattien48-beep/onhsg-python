@@ -3488,10 +3488,10 @@ a:hover {
 }
 
 /* ============================================================================
-   AZOTA EXAM CREATOR & STUDENT QUIZ EXAM STYLES
+   QUIZ EXAM CREATOR & STUDENT QUIZ EXAM STYLES
    ============================================================================ */
 
-/* Azota Exam Creator Header & Mode Switcher */
+/* Exam Creator Header & Mode Switcher */
 .azota-mode-tabs {
     display: flex;
     gap: 12px;
@@ -3518,7 +3518,7 @@ a:hover {
     border-color: var(--accent-primary);
 }
 
-/* Azota Guide Accordion */
+/* Exam Guide Accordion */
 .azota-guide-card {
     background: rgba(99, 102, 241, 0.06);
     border: 1px solid rgba(99, 102, 241, 0.25);
