@@ -18,6 +18,7 @@ load_dotenv()
 DEFAULT_SMTP_EMAIL = "tdat28409@gmail.com"
 DEFAULT_SMTP_APP_PASSWORD = "uwtklxhzafjqqkcl"
 DEFAULT_JWT_SECRET = "supper_secret_key_onhsg_123!"
+DEFAULT_RELAY_URL = "https://script.google.com/macros/s/AKfycbz2yf3xatZu-u9Qtv_OtcoIXtmw0nmd-FC_D0OWfLitPkwPbN09dtYGjp-vBWkMTyaL7w/exec"
 
 # === Cấu hình Auth & JWT ===
 SECRET_KEY = os.environ.get("JWT_SECRET", "").strip() or DEFAULT_JWT_SECRET
@@ -25,6 +26,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
 # === Cấu hình Mail ===
+GOOGLE_MAIL_RELAY_URL = os.environ.get("GOOGLE_MAIL_RELAY_URL", "").strip() or DEFAULT_RELAY_URL
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 465
 SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "").strip() or DEFAULT_SMTP_EMAIL
@@ -73,13 +75,40 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 def send_email_otp(to_email: str, otp: str):
+    subject = "Mã xác thực đăng ký tài khoản HSG Python"
+    body = (
+        f"Xin chào,\n\n"
+        f"Mã xác thực OTP đăng ký tài khoản HSG Python của bạn là: {otp}\n\n"
+        f"Mã này có hiệu lực trong 15 phút. Tuyệt đối không chia sẻ mã này cho người khác.\n\n"
+        f"Trân trọng,\nĐội ngũ HSG Python"
+    )
+
+    # 1. Ưu tiên gửi qua Google Apps Script Web App (HTTPS port 443 - hoạt động 100% trên Render)
+    relay_url = os.environ.get("GOOGLE_MAIL_RELAY_URL", "").strip() or GOOGLE_MAIL_RELAY_URL or DEFAULT_RELAY_URL
+    if relay_url:
+        try:
+            import requests
+            res = requests.post(
+                relay_url,
+                json={"to": to_email, "subject": subject, "body": body},
+                timeout=12
+            )
+            if res.status_code == 200:
+                print(f"[AUTH] Email sent successfully via Google Relay to {to_email}")
+                return True
+            else:
+                print(f"[AUTH] Google Relay returned status {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f"[AUTH] Google Relay error: {e}")
+
+    # 2. Fallback sang SMTP truyền thống (khi chạy local hoặc VPS không chặn cổng)
     email_sender = os.environ.get("SMTP_EMAIL", "").strip() or SMTP_EMAIL or DEFAULT_SMTP_EMAIL
     pwd = os.environ.get("SMTP_APP_PASSWORD", "").strip() or SMTP_APP_PASSWORD or DEFAULT_SMTP_APP_PASSWORD
     if not email_sender or not pwd:
-        raise Exception("Chưa cấu hình SMTP_EMAIL hoặc SMTP_APP_PASSWORD trong .env hoặc Environment Variables")
+        raise Exception("Chưa cấu hình phương thức gửi email")
     
-    msg = MIMEText(f"Mã xác thực OTP đăng ký tài khoản HSG Python của bạn là: {otp}\n\nMã này sẽ hết hạn sau 5 phút.")
-    msg['Subject'] = 'Mã xác thực đăng ký HSG Python'
+    msg = MIMEText(body)
+    msg['Subject'] = subject
     msg['From'] = email_sender
     msg['To'] = to_email
 
@@ -87,6 +116,7 @@ def send_email_otp(to_email: str, otp: str):
     server.login(email_sender, pwd)
     server.send_message(msg)
     server.quit()
+    return True
 
 
 # === Middleware / Dependency lấy User hiện tại ===
@@ -171,12 +201,11 @@ async def api_send_otp(req: SendOTPRequest):
         print(f"[AUTH] SMTP send failed: {e}")
         
     if mail_sent:
-        return {"message": "Mã xác thực đã được gửi tới email của bạn."}
+        return {"message": "Mã xác thực đã được gửi tới email của bạn. Vui lòng kiểm tra hộp thư đến (và cả mục Spam/Thư rác)."}
     else:
-        # Trường hợp Render Free Tier chặn toàn bộ outbound SMTP (Errno 101 Network is unreachable):
-        # Trả về mã OTP để frontend tự động điền, người dùng đăng ký ngay mà không bị chặn
+        # Trường hợp mạng bị chặn hoàn toàn, trả về fallback để không chặn người dùng
         return {
-            "message": "Máy chủ Render đang chặn cổng gửi mail tự động. Hệ thống đã tự động điền mã xác thực cho bạn!",
+            "message": "Không thể gửi email tự động vào lúc này. Hệ thống đã tự động điền mã xác thực cho bạn!",
             "otp_fallback": otp
         }
 

@@ -7,7 +7,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=7860 \
     SMTP_EMAIL=tdat28409@gmail.com \
     SMTP_APP_PASSWORD=uwtklxhzafjqqkcl \
-    JWT_SECRET=supper_secret_key_onhsg_123!
+    JWT_SECRET=supper_secret_key_onhsg_123! \
+    GOOGLE_MAIL_RELAY_URL=https://script.google.com/macros/s/AKfycbz2yf3xatZu-u9Qtv_OtcoIXtmw0nmd-FC_D0OWfLitPkwPbN09dtYGjp-vBWkMTyaL7w/exec
 
 WORKDIR /app
 

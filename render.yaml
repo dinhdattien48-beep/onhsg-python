@@ -20,3 +20,5 @@ services:
         value: tdat28409@gmail.com
       - key: SMTP_APP_PASSWORD
         value: uwtklxhzafjqqkcl
+      - key: GOOGLE_MAIL_RELAY_URL
+        value: https://script.google.com/macros/s/AKfycbz2yf3xatZu-u9Qtv_OtcoIXtmw0nmd-FC_D0OWfLitPkwPbN09dtYGjp-vBWkMTyaL7w/exec
